@@ -451,7 +451,7 @@ export type Database = {
         | "rejected"
       message_phase: "pre_payment" | "post_payment"
       payment_status: "pending" | "completed" | "refunded" | "failed"
-      trip_status: "active" | "full" | "completed" | "cancelled"
+      trip_status: "active" | "paused" | "full" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -592,7 +592,7 @@ export const Constants = {
       ],
       message_phase: ["pre_payment", "post_payment"],
       payment_status: ["pending", "completed", "refunded", "failed"],
-      trip_status: ["active", "full", "completed", "cancelled"],
+      trip_status: ["active", "paused", "full", "completed", "cancelled"],
     },
   },
 } as const

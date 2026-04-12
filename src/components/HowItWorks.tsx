@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 
 const steps = [
   { icon: Search, label: 'Buscá un viaje', desc: 'Elegí de dónde salís, a dónde vas y cuándo querés viajar.', color: 'bg-primary/10 text-primary' },
-  { icon: Send, label: 'Pedí tu lugar', desc: 'Mandale una solicitud al chofer. Sin compromiso.', color: 'bg-ocean-light/10 text-ocean-light' },
-  { icon: CheckCircle2, label: 'El chofer decide', desc: 'El chofer revisa tu perfil y acepta o rechaza la solicitud.', color: 'bg-accent/10 text-accent' },
+  { icon: Send, label: 'Reservá tu lugar', desc: 'Mandale una solicitud al chofer. Sin compromiso.', color: 'bg-ocean-light/10 text-ocean-light' },
+  { icon: CheckCircle2, label: 'Esperá la confirmación del chofer', desc: 'El chofer revisa tu perfil y te confirma o rechaza.', color: 'bg-accent/10 text-accent' },
   { icon: CreditCard, label: 'Pagá solo si te aceptan', desc: 'El pago se habilita recién cuando el chofer te confirma.', color: 'bg-primary/10 text-primary' },
   { icon: MessageCircle, label: 'Coordiná por chat', desc: 'Después de pagar se abre el chat para acordar punto de encuentro, equipaje o mascotas.', color: 'bg-ocean-light/10 text-ocean-light' },
   { icon: Car, label: 'Viajá tranquilo', desc: 'Compartí el viaje, dividí los gastos y llegá a destino.', color: 'bg-accent/10 text-accent' },

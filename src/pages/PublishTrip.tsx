@@ -10,21 +10,22 @@ import BottomNav from '@/components/BottomNav';
 import { routePriceRanges } from '@/data/mockData';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PublishTrip = () => {
   const navigate = useNavigate();
-  // In production, maxVehicleSeats comes from the driver's profile
+  const { user } = useAuth();
   const maxVehicleSeats = 4;
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     origin: '', destination: '', date: '', time: '',
     totalSeats: String(maxVehicleSeats), pricePerSeat: '',
     acceptsPets: false, hasPet: false, allowsLuggage: true,
     observations: '',
   });
-  const bookedSeats = 0; // In production, comes from confirmed bookings
 
   const priceNum = parseInt(form.pricePerSeat) || 0;
-  // Simple route matching for demo
   const matchedRoute = routePriceRanges.find(r => {
     const o = form.origin.toLowerCase();
     const d = form.destination.toLowerCase();
@@ -35,12 +36,40 @@ const PublishTrip = () => {
   });
 
   const priceWarning = matchedRoute && priceNum > matchedRoute.max;
-  const priceSuggestion = matchedRoute && priceNum === 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (priceWarning) {
       toast.error(`El precio supera el máximo permitido para esta ruta ($${matchedRoute!.max.toLocaleString()}).`);
+      return;
+    }
+    if (!user) {
+      toast.error('Tenés que iniciar sesión para publicar un viaje.');
+      return;
+    }
+
+    setLoading(true);
+    const totalSeats = parseInt(form.totalSeats);
+    const { error } = await supabase.from('trips').insert({
+      driver_id: user.id,
+      origin: form.origin,
+      destination: form.destination,
+      date: form.date,
+      time: form.time,
+      total_seats: totalSeats,
+      available_seats: totalSeats,
+      price_per_seat: parseInt(form.pricePerSeat),
+      accepts_pets: form.acceptsPets,
+      has_pet: form.hasPet,
+      allows_luggage: form.allowsLuggage,
+      observations: form.observations || null,
+      status: 'active',
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.error('No pudimos publicar el viaje. Intentá de nuevo.');
+      console.error(error);
       return;
     }
     toast.success('¡Listo! Tu viaje ya está publicado.');
@@ -67,7 +96,7 @@ const PublishTrip = () => {
           <div className="bg-accent/10 rounded-2xl p-4 flex items-start gap-2.5 mb-3">
             <Info className="h-4 w-4 text-accent shrink-0 mt-0.5" />
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Tu viaje aparece en las búsquedas y también se muestra a pasajeros que publicaron que necesitan viajar en rutas compatibles.
+              Tu viaje aparece en las búsquedas mientras tenga lugares disponibles. Podés pausarlo o cerrarlo en cualquier momento desde "Mis viajes".
             </p>
           </div>
 
@@ -103,11 +132,8 @@ const PublishTrip = () => {
                   <Label className="text-[10px] text-muted-foreground mb-1 block">Lugares disponibles (máx. {maxVehicleSeats})</Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input type="number" min={Math.max(1, bookedSeats)} max={maxVehicleSeats} value={form.totalSeats} onChange={e => setForm({ ...form, totalSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
+                    <Input type="number" min={1} max={maxVehicleSeats} value={form.totalSeats} onChange={e => setForm({ ...form, totalSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
                   </div>
-                  {bookedSeats > 0 && (
-                    <p className="text-[10px] text-muted-foreground mt-1">Ya tenés {bookedSeats} asiento{bookedSeats > 1 ? 's' : ''} reservado{bookedSeats > 1 ? 's' : ''}. No podés bajar de esa cantidad.</p>
-                  )}
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground mb-1 block">Precio por asiento</Label>
@@ -118,7 +144,6 @@ const PublishTrip = () => {
                 </div>
               </div>
 
-              {/* Price guidance */}
               {matchedRoute && (
                 <div className={`rounded-xl p-3 flex items-start gap-2 text-[11px] ${priceWarning ? 'bg-destructive/10 border border-destructive/20' : 'bg-secondary/60'}`}>
                   {priceWarning ? (
@@ -175,8 +200,8 @@ const PublishTrip = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full h-12 gradient-accent text-primary-foreground rounded-xl text-sm font-semibold gap-2">
-                <Car className="h-4 w-4" /> Publicar viaje
+              <Button type="submit" disabled={loading} className="w-full h-12 gradient-accent text-primary-foreground rounded-xl text-sm font-semibold gap-2">
+                <Car className="h-4 w-4" /> {loading ? 'Publicando...' : 'Publicar viaje'}
               </Button>
             </form>
           </div>

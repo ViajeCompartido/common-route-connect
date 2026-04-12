@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Calendar, Search, PawPrint, Luggage, Star, Users, SlidersHorizontal, X } from 'lucide-react';
+import { MapPin, Calendar, Search, PawPrint, Luggage, Star, Users, SlidersHorizontal, X, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -16,6 +16,7 @@ export interface SearchFilters {
   origin: string;
   destination: string;
   date: string;
+  time: string;
   acceptsPets: boolean;
   driverHasPet: boolean;
   allowsLuggage: boolean;
@@ -28,6 +29,7 @@ const SearchForm = ({ onSearch, compact = false }: SearchFormProps) => {
     origin: '',
     destination: '',
     date: '',
+    time: '',
     acceptsPets: false,
     driverHasPet: false,
     allowsLuggage: false,
@@ -60,7 +62,7 @@ const SearchForm = ({ onSearch, compact = false }: SearchFormProps) => {
       <div className="relative">
         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
         <Input
-          placeholder="¿Desde dónde salís?"
+          placeholder="Zona o barrio de salida"
           value={filters.origin}
           onChange={(e) => setFilters({ ...filters, origin: e.target.value })}
           className="pl-10 h-12 text-sm rounded-xl"
@@ -75,15 +77,31 @@ const SearchForm = ({ onSearch, compact = false }: SearchFormProps) => {
           className="pl-10 h-12 text-sm rounded-xl"
         />
       </div>
-      <div className="relative">
-        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="date"
-          value={filters.date}
-          onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-          className="pl-10 h-12 text-sm rounded-xl"
-        />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="date"
+            value={filters.date}
+            onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+            className="pl-10 h-12 text-sm rounded-xl"
+          />
+        </div>
+        <div className="relative w-[130px]">
+          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="time"
+            value={filters.time}
+            onChange={(e) => setFilters({ ...filters, time: e.target.value })}
+            className="pl-10 h-12 text-sm rounded-xl"
+            placeholder="Hora aprox."
+          />
+        </div>
       </div>
+
+      <p className="text-[11px] text-muted-foreground/70 -mt-1">
+        Te mostramos viajes cercanos en zona y horario, no hace falta que coincidan exacto.
+      </p>
 
       {/* Filter toggle */}
       {!compact && (
@@ -110,7 +128,6 @@ const SearchForm = ({ onSearch, compact = false }: SearchFormProps) => {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden space-y-4 pt-1"
           >
-            {/* Pet filters */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="pets-search" className="text-sm flex items-center gap-2">
@@ -124,7 +141,7 @@ const SearchForm = ({ onSearch, compact = false }: SearchFormProps) => {
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="driver-pet" className="text-sm flex items-center gap-2">
-                  <PawPrint className="h-4 w-4 text-ocean-light" /> Chofer viaja con mascota
+                  <PawPrint className="h-4 w-4 text-muted-foreground" /> Chofer viaja con mascota
                 </Label>
                 <Switch
                   id="driver-pet"
@@ -144,7 +161,6 @@ const SearchForm = ({ onSearch, compact = false }: SearchFormProps) => {
               </div>
             </div>
 
-            {/* Rating filter */}
             <div className="space-y-2">
               <Label className="text-sm flex items-center gap-2">
                 <Star className="h-4 w-4 text-accent" />
@@ -160,7 +176,6 @@ const SearchForm = ({ onSearch, compact = false }: SearchFormProps) => {
               />
             </div>
 
-            {/* Seats filter */}
             <div className="space-y-2">
               <Label className="text-sm flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
@@ -191,7 +206,7 @@ const SearchForm = ({ onSearch, compact = false }: SearchFormProps) => {
 
       <Button type="submit" className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
         <Search className="h-4 w-4" />
-        Buscar viajes
+        Buscar viajes compatibles
       </Button>
     </motion.form>
   );

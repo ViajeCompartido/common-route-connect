@@ -24,6 +24,8 @@ export interface Trip {
   driverVerified: boolean;
   origin: string;
   destination: string;
+  zone?: string;
+  meetingPoint?: string;
   date: string;
   time: string;
   availableSeats: number;

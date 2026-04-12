@@ -9,6 +9,8 @@ export interface User {
   avatar?: string;
   rating: number;
   totalRatings: number;
+  totalTrips: number;
+  verified: boolean;
   createdAt: string;
 }
 
@@ -18,6 +20,8 @@ export interface Trip {
   driverName: string;
   driverAvatar?: string;
   driverRating: number;
+  driverTotalTrips: number;
+  driverVerified: boolean;
   origin: string;
   destination: string;
   date: string;
@@ -43,6 +47,7 @@ export interface Review {
   id: string;
   fromUserId: string;
   fromUserName: string;
+  fromUserAvatar?: string;
   toUserId: string;
   rating: number;
   comment: string;

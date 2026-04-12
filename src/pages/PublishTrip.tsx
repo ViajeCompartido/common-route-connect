@@ -16,8 +16,30 @@ import { useAuth } from '@/contexts/AuthContext';
 const PublishTrip = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const maxVehicleSeats = 4;
+  const [maxVehicleSeats, setMaxVehicleSeats] = useState(4);
   const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    origin: '', destination: '', date: '', time: '',
+    totalSeats: '4', pricePerSeat: '',
+    acceptsPets: false, hasPet: false, allowsLuggage: true,
+    observations: '',
+  });
+
+  // Fetch driver's max seats from their profile
+  useState(() => {
+    if (!user) return;
+    supabase
+      .from('driver_profiles')
+      .select('max_seats')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setMaxVehicleSeats(data.max_seats);
+          setForm(f => ({ ...f, totalSeats: String(data.max_seats) }));
+        }
+      });
+  });
   const [form, setForm] = useState({
     origin: '', destination: '', date: '', time: '',
     totalSeats: String(maxVehicleSeats), pricePerSeat: '',

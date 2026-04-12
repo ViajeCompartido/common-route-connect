@@ -61,7 +61,7 @@ export interface Trip {
   hasPet: boolean;
   allowsLuggage: boolean;
   observations?: string;
-  status: 'active' | 'full' | 'completed' | 'cancelled';
+  status: 'active' | 'paused' | 'full' | 'completed' | 'cancelled';
 }
 
 export interface RideRequest {

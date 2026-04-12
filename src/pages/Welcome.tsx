@@ -30,7 +30,7 @@ const Welcome = () => {
         <h1 className="text-3xl font-heading font-bold text-primary-foreground mb-3">
           ViajeCompartido
         </h1>
-        <p className="text-primary-foreground/80 text-base leading-relaxed mb-8">
+        <p className="text-primary-foreground/90 text-base leading-relaxed mb-8">
           Encontrá choferes y pasajeros que van a donde vos vas. Compartí gastos, viajá seguro.
         </p>
 
@@ -46,10 +46,10 @@ const Welcome = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + i * 0.1 }}
-              className="flex items-center gap-1.5 bg-primary-foreground/10 backdrop-blur-sm rounded-full px-3 py-1.5"
+              className="flex items-center gap-1.5 bg-primary-foreground/15 backdrop-blur-sm rounded-full px-3.5 py-2 border border-primary-foreground/10"
             >
-              <feat.icon className="h-3.5 w-3.5 text-accent" />
-              <span className="text-[11px] text-primary-foreground/90 font-medium">{feat.label}</span>
+              <feat.icon className="h-3.5 w-3.5 text-accent-foreground drop-shadow-sm" style={{ color: 'hsl(var(--ocean-bright))' }} />
+              <span className="text-xs text-primary-foreground font-medium">{feat.label}</span>
             </motion.div>
           ))}
         </div>
@@ -71,11 +71,11 @@ const Welcome = () => {
         <Button
           onClick={() => navigate('/login')}
           variant="outline"
-          className="w-full h-14 rounded-2xl text-base font-semibold bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20"
+          className="w-full h-14 rounded-2xl text-base font-semibold bg-primary-foreground/15 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/25"
         >
           Ya tengo cuenta
         </Button>
-        <p className="text-center text-primary-foreground/50 text-[11px] mt-4">
+        <p className="text-center text-primary-foreground/60 text-[11px] mt-4">
           Al crear una cuenta aceptás los términos y condiciones
         </p>
       </motion.div>

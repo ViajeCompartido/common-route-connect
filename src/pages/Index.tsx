@@ -26,8 +26,8 @@ const Index = () => {
             <Car className="h-7 w-7 text-accent" />
             <h1 className="text-xl font-heading font-bold text-primary-foreground tracking-tight">ViajeCompartido</h1>
           </div>
-          <p className="text-primary-foreground/70 text-sm mb-6 max-w-[280px]">
-            Conectá con choferes reales que ya viajan entre ciudades. Compartí gastos, viajá seguro.
+          <p className="text-primary-foreground/70 text-sm mb-6 max-w-[300px]">
+            Conectá con choferes que ya viajan entre ciudades. Compartí gastos, viajá seguro y llegá a donde necesitás.
           </p>
 
           <div className="bg-card rounded-2xl p-5 shadow-ocean">
@@ -37,19 +37,14 @@ const Index = () => {
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-8">
-        {/* How it works */}
         <HowItWorks />
-
-        {/* Feature blocks */}
         <FeatureBlocks />
-
-        {/* Verified drivers carousel */}
         <VerifiedDrivers />
 
         {/* Upcoming trips */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-heading font-bold">Próximos viajes</h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-base font-heading font-bold">Viajes disponibles</h2>
             <Button
               variant="ghost"
               size="sm"
@@ -59,6 +54,7 @@ const Index = () => {
               Ver todos <Search className="h-3 w-3" />
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground mb-4">Viajes que salen próximamente.</p>
 
           <div className="space-y-3">
             {mockTrips.slice(0, 3).map((trip, i) => (

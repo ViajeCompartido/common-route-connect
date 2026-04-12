@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Calendar, Clock, Users, DollarSign, PawPrint, Luggage, Car, Info, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ const PublishTrip = () => {
   });
 
   // Fetch driver's max seats from their profile
-  useState(() => {
+  useEffect(() => {
     if (!user) return;
     supabase
       .from('driver_profiles')
@@ -39,13 +39,7 @@ const PublishTrip = () => {
           setForm(f => ({ ...f, totalSeats: String(data.max_seats) }));
         }
       });
-  });
-  const [form, setForm] = useState({
-    origin: '', destination: '', date: '', time: '',
-    totalSeats: String(maxVehicleSeats), pricePerSeat: '',
-    acceptsPets: false, hasPet: false, allowsLuggage: true,
-    observations: '',
-  });
+  }, [user]);
 
   const priceNum = parseInt(form.pricePerSeat) || 0;
   const matchedRoute = routePriceRanges.find(r => {

@@ -10,6 +10,11 @@ import PublishTrip from "./pages/PublishTrip";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
+import NeedRide from "./pages/NeedRide";
+import CompatiblePassengers from "./pages/CompatiblePassengers";
+import DriverRequests from "./pages/DriverRequests";
+import MyTrips from "./pages/MyTrips";
+import Rate from "./pages/Rate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +33,11 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/need-ride" element={<NeedRide />} />
+          <Route path="/compatible-passengers" element={<CompatiblePassengers />} />
+          <Route path="/driver-requests" element={<DriverRequests />} />
+          <Route path="/my-trips" element={<MyTrips />} />
+          <Route path="/rate" element={<Rate />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

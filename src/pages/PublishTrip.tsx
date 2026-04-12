@@ -6,40 +6,64 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BottomNav from '@/components/BottomNav';
 import { routePriceRanges } from '@/data/mockData';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const PET_SIZES = [
+  { value: 'small', label: 'Chica' },
+  { value: 'medium', label: 'Mediana' },
+  { value: 'large', label: 'Grande' },
+];
 
 const PublishTrip = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile, driverProfile, isDriver, isProfileComplete, isDriverProfileComplete, loading: profileLoading } = useProfile();
   const [maxVehicleSeats, setMaxVehicleSeats] = useState(4);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     origin: '', destination: '', date: '', time: '',
     totalSeats: '4', pricePerSeat: '',
-    acceptsPets: false, hasPet: false, allowsLuggage: true,
+    acceptsPets: false, petSizesAccepted: [] as string[],
+    hasPet: false, petSize: '',
+    allowsLuggage: true,
     observations: '',
   });
 
-  // Fetch driver's max seats from their profile
   useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('driver_profiles')
-      .select('max_seats')
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setMaxVehicleSeats(data.max_seats);
-          setForm(f => ({ ...f, totalSeats: String(data.max_seats) }));
-        }
-      });
-  }, [user]);
+    if (driverProfile) {
+      setMaxVehicleSeats(driverProfile.max_seats);
+      setForm(f => ({
+        ...f,
+        totalSeats: String(driverProfile.max_seats),
+        acceptsPets: driverProfile.accepts_pets,
+        petSizesAccepted: driverProfile.pet_sizes_accepted || [],
+      }));
+    }
+  }, [driverProfile]);
+
+  // Redirect if not a driver
+  useEffect(() => {
+    if (!profileLoading && !isDriver) {
+      toast.error('Activá tu perfil de chofer para publicar viajes.');
+      navigate('/activate-driver');
+    }
+  }, [profileLoading, isDriver]);
+
+  // Check profile completeness
+  useEffect(() => {
+    if (!profileLoading && isDriver && !isDriverProfileComplete) {
+      toast.error('Completá tu perfil de chofer para publicar viajes.');
+      navigate('/activate-driver');
+    }
+  }, [profileLoading, isDriverProfileComplete]);
 
   const priceNum = parseInt(form.pricePerSeat) || 0;
   const matchedRoute = routePriceRanges.find(r => {
@@ -50,8 +74,16 @@ const PublishTrip = () => {
       || (r.routeKey.includes('cordoba') && o.includes('córdoba') && d.includes('rosario'))
       || (r.routeKey.includes('mar_del_plata') && (o.includes('buenos aires') || o.includes('palermo') || o.includes('belgrano')) && d.includes('mar del plata'));
   });
-
   const priceWarning = matchedRoute && priceNum > matchedRoute.max;
+
+  const togglePetSize = (size: string) => {
+    setForm(f => ({
+      ...f,
+      petSizesAccepted: f.petSizesAccepted.includes(size)
+        ? f.petSizesAccepted.filter(s => s !== size)
+        : [...f.petSizesAccepted, size],
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +93,14 @@ const PublishTrip = () => {
     }
     if (!user) {
       toast.error('Tenés que iniciar sesión para publicar un viaje.');
+      return;
+    }
+    if (form.hasPet && !form.petSize) {
+      toast.error('Indicá el tamaño de tu mascota.');
+      return;
+    }
+    if (form.acceptsPets && form.petSizesAccepted.length === 0) {
+      toast.error('Seleccioná qué tamaños de mascota aceptás.');
       return;
     }
 
@@ -77,10 +117,20 @@ const PublishTrip = () => {
       price_per_seat: parseInt(form.pricePerSeat),
       accepts_pets: form.acceptsPets,
       has_pet: form.hasPet,
+      pet_size: form.hasPet ? form.petSize : null,
       allows_luggage: form.allowsLuggage,
       observations: form.observations || null,
       status: 'active',
     });
+
+    // Also update driver profile with pet preferences
+    if (driverProfile) {
+      await supabase.from('driver_profiles').update({
+        accepts_pets: form.acceptsPets,
+        pet_sizes_accepted: form.petSizesAccepted,
+      }).eq('user_id', user.id);
+    }
+
     setLoading(false);
 
     if (error) {
@@ -91,6 +141,8 @@ const PublishTrip = () => {
     toast.success('¡Listo! Tu viaje ya está publicado.');
     navigate('/');
   };
+
+  if (profileLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground text-sm">Cargando...</p></div>;
 
   return (
     <div className="min-h-screen pb-20">
@@ -185,18 +237,47 @@ const PublishTrip = () => {
 
               <div className="border-t border-border pt-4 space-y-4">
                 <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider">Opciones del viaje</h3>
+
                 <div className="flex items-center justify-between">
                   <Label htmlFor="acceptsPets" className="flex items-center gap-2 text-sm">
                     <PawPrint className="h-4 w-4 text-accent" /> Acepto mascotas
                   </Label>
-                  <Switch id="acceptsPets" checked={form.acceptsPets} onCheckedChange={v => setForm({ ...form, acceptsPets: v })} />
+                  <Switch id="acceptsPets" checked={form.acceptsPets} onCheckedChange={v => setForm({ ...form, acceptsPets: v, petSizesAccepted: v ? form.petSizesAccepted : [] })} />
                 </div>
+
+                {form.acceptsPets && (
+                  <div className="ml-6 space-y-2">
+                    <Label className="text-[10px] text-muted-foreground block">¿Qué tamaños aceptás?</Label>
+                    <div className="flex gap-3">
+                      {PET_SIZES.map(s => (
+                        <label key={s.value} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                          <Checkbox checked={form.petSizesAccepted.includes(s.value)} onCheckedChange={() => togglePetSize(s.value)} />
+                          {s.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <Label htmlFor="hasPet" className="flex items-center gap-2 text-sm">
                     <PawPrint className="h-4 w-4 text-ocean-light" /> Viajo con mi mascota
                   </Label>
-                  <Switch id="hasPet" checked={form.hasPet} onCheckedChange={v => setForm({ ...form, hasPet: v })} />
+                  <Switch id="hasPet" checked={form.hasPet} onCheckedChange={v => setForm({ ...form, hasPet: v, petSize: v ? form.petSize : '' })} />
                 </div>
+
+                {form.hasPet && (
+                  <div className="ml-6">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Tamaño de tu mascota</Label>
+                    <Select value={form.petSize} onValueChange={v => setForm({ ...form, petSize: v })}>
+                      <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Seleccioná el tamaño" /></SelectTrigger>
+                      <SelectContent>
+                        {PET_SIZES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <Label htmlFor="allowsLuggage" className="flex items-center gap-2 text-sm">
                     <Luggage className="h-4 w-4" /> Permito equipaje grande

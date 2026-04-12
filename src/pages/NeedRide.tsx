@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Calendar, Clock, Users, PawPrint, Luggage, Send, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -6,25 +6,45 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+
+const PET_SIZES = [
+  { value: 'small', label: 'Chica' },
+  { value: 'medium', label: 'Mediana' },
+  { value: 'large', label: 'Grande' },
+];
 
 const NeedRide = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isProfileComplete, loading: profileLoading } = useProfile();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     origin: '', destination: '', date: '', time: '',
-    seats: '1', hasPet: false, hasLuggage: false, message: '',
+    seats: '1', hasPet: false, petSize: '', hasLuggage: false, message: '',
   });
+
+  useEffect(() => {
+    if (!profileLoading && !isProfileComplete) {
+      toast.error('Completá tu perfil para continuar.');
+      navigate('/edit-profile');
+    }
+  }, [profileLoading, isProfileComplete]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
       toast.error('Tenés que iniciar sesión primero.');
+      return;
+    }
+    if (form.hasPet && !form.petSize) {
+      toast.error('Indicá el tamaño de tu mascota.');
       return;
     }
 
@@ -37,6 +57,7 @@ const NeedRide = () => {
       time: form.time,
       seats: parseInt(form.seats),
       has_pet: form.hasPet,
+      pet_size: form.hasPet ? form.petSize : null,
       has_luggage: form.hasLuggage,
       message: form.message || null,
       status: 'active',
@@ -51,6 +72,8 @@ const NeedRide = () => {
     toast.success('¡Listo! Tu búsqueda está publicada. Te avisamos cuando haya coincidencias.');
     navigate('/my-trips');
   };
+
+  if (profileLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground text-sm">Cargando...</p></div>;
 
   return (
     <div className="min-h-screen pb-20">
@@ -113,8 +136,21 @@ const NeedRide = () => {
                   <Label htmlFor="hasPet" className="flex items-center gap-2 text-sm">
                     <PawPrint className="h-4 w-4 text-accent" /> Viajo con mascota
                   </Label>
-                  <Switch id="hasPet" checked={form.hasPet} onCheckedChange={v => setForm({ ...form, hasPet: v })} />
+                  <Switch id="hasPet" checked={form.hasPet} onCheckedChange={v => setForm({ ...form, hasPet: v, petSize: v ? form.petSize : '' })} />
                 </div>
+
+                {form.hasPet && (
+                  <div className="ml-6">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Tamaño de tu mascota</Label>
+                    <Select value={form.petSize} onValueChange={v => setForm({ ...form, petSize: v })}>
+                      <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Seleccioná el tamaño" /></SelectTrigger>
+                      <SelectContent>
+                        {PET_SIZES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <Label htmlFor="hasLuggage" className="flex items-center gap-2 text-sm">
                     <Luggage className="h-4 w-4" /> Llevo equipaje grande

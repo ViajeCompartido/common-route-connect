@@ -1,7 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, Star, MessageCircle, BadgeCheck, Car, Send, CheckCircle2, CreditCard, XCircle, Info, Handshake } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, MessageCircle, BadgeCheck, Car, Send, CheckCircle2, CreditCard, XCircle, Info, Handshake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
@@ -9,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 
 type BookingStep = 'none' | 'pending' | 'accepted' | 'coordinating' | 'confirmed' | 'paid';
 
@@ -20,107 +24,125 @@ const flowSteps = [
   { key: 'paid', label: '¡Listo!', icon: CheckCircle2 },
 ];
 
+const PET_SIZES = [
+  { value: 'small', label: 'Chica' },
+  { value: 'medium', label: 'Mediana' },
+  { value: 'large', label: 'Grande' },
+];
+
+const PET_SIZE_LABELS: Record<string, string> = { small: 'Chica', medium: 'Mediana', large: 'Grande' };
+
 interface TripData {
-  id: string;
-  origin: string;
-  destination: string;
-  date: string;
-  time: string;
-  available_seats: number;
-  total_seats: number;
-  price_per_seat: number;
-  accepts_pets: boolean;
-  has_pet: boolean;
-  allows_luggage: boolean;
-  zone: string | null;
-  meeting_point: string | null;
-  observations: string | null;
-  driver_id: string;
-  status: string;
+  id: string; origin: string; destination: string; date: string; time: string;
+  available_seats: number; total_seats: number; price_per_seat: number;
+  accepts_pets: boolean; has_pet: boolean; allows_luggage: boolean;
+  zone: string | null; meeting_point: string | null; observations: string | null;
+  driver_id: string; status: string; pet_size: string | null;
 }
 
 interface DriverProfile {
-  first_name: string;
-  last_name: string;
-  average_rating: number;
-  total_trips: number;
-  verified: boolean;
+  first_name: string; last_name: string; average_rating: number;
+  total_trips: number; verified: boolean;
 }
+
+interface PetSurcharge { size: string; surcharge: number; }
 
 const TripDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isProfileComplete, loading: profileLoading } = useProfile();
   const [trip, setTrip] = useState<TripData | null>(null);
   const [driver, setDriver] = useState<DriverProfile | null>(null);
+  const [driverPetSizes, setDriverPetSizes] = useState<string[]>([]);
+  const [petSurcharges, setPetSurcharges] = useState<PetSurcharge[]>([]);
   const [bookingStatus, setBookingStatus] = useState<BookingStep>('none');
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [rejected, setRejected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Booking form state
+  const [reqSeats, setReqSeats] = useState(1);
+  const [reqHasPet, setReqHasPet] = useState(false);
+  const [reqPetSize, setReqPetSize] = useState('');
+  const [reqHasLuggage, setReqHasLuggage] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     loadTrip();
+    supabase.from('pet_surcharges').select('size, surcharge').then(({ data }) => {
+      if (data) setPetSurcharges(data);
+    });
   }, [id]);
 
   const loadTrip = async () => {
     setLoading(true);
-    const { data: tripData, error } = await supabase
-      .from('trips')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data: tripData, error } = await supabase.from('trips').select('*').eq('id', id).single();
+    if (error || !tripData) { setLoading(false); return; }
+    setTrip(tripData as TripData);
 
-    if (error || !tripData) {
-      setLoading(false);
-      return;
-    }
-    setTrip(tripData);
-
-    // Load driver profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('first_name, last_name, average_rating, total_trips, verified')
-      .eq('id', tripData.driver_id)
-      .single();
+    const [{ data: profileData }, { data: driverData }] = await Promise.all([
+      supabase.from('profiles').select('first_name, last_name, average_rating, total_trips, verified').eq('id', tripData.driver_id).single(),
+      supabase.from('driver_profiles').select('pet_sizes_accepted').eq('user_id', tripData.driver_id).maybeSingle(),
+    ]);
     if (profileData) setDriver(profileData);
+    if (driverData?.pet_sizes_accepted) setDriverPetSizes(driverData.pet_sizes_accepted as string[]);
 
-    // Check if user already has a booking for this trip
     if (user) {
-      const { data: existingBooking } = await supabase
-        .from('bookings')
+      const { data: existingBooking } = await supabase.from('bookings')
         .select('id, status')
-        .eq('trip_id', id)
-        .eq('passenger_id', user.id)
+        .eq('trip_id', id).eq('passenger_id', user.id)
         .not('status', 'in', '("cancelled_passenger","cancelled_driver","rejected")')
         .maybeSingle();
-
       if (existingBooking) {
         setBookingId(existingBooking.id);
-        const statusMap: Record<string, BookingStep> = {
-          pending: 'pending',
-          accepted: 'accepted',
-          coordinating: 'coordinating',
-          paid: 'paid',
-          completed: 'paid',
-        };
+        const statusMap: Record<string, BookingStep> = { pending: 'pending', accepted: 'accepted', coordinating: 'coordinating', paid: 'paid', completed: 'paid' };
         setBookingStatus(statusMap[existingBooking.status] || 'none');
       }
     }
     setLoading(false);
   };
 
+  const petSurcharge = reqHasPet && reqPetSize
+    ? petSurcharges.find(p => p.size === reqPetSize)?.surcharge ?? 0
+    : 0;
+  const basePrice = trip ? Number(trip.price_per_seat) * reqSeats : 0;
+  const totalPrice = basePrice + petSurcharge;
+
   const handleRequestSeat = async () => {
     if (!user || !trip) return;
-    setSubmitting(true);
 
+    if (!isProfileComplete) {
+      toast.error('Completá tu perfil para continuar.');
+      navigate('/edit-profile');
+      return;
+    }
+
+    if (reqHasPet && !reqPetSize) {
+      toast.error('Indicá el tamaño de tu mascota.');
+      return;
+    }
+    if (reqHasPet && !trip.accepts_pets) {
+      toast.error('Este chofer no acepta mascotas.');
+      return;
+    }
+    if (reqHasPet && reqPetSize && driverPetSizes.length > 0 && !driverPetSizes.includes(reqPetSize)) {
+      toast.error(`Este chofer no acepta mascotas de tamaño ${PET_SIZE_LABELS[reqPetSize]?.toLowerCase()}.`);
+      return;
+    }
+
+    setSubmitting(true);
     const { data, error } = await supabase.from('bookings').insert({
       trip_id: trip.id,
       passenger_id: user.id,
       driver_id: trip.driver_id,
-      seats: 1,
+      seats: reqSeats,
       price_per_seat: trip.price_per_seat,
+      has_pet: reqHasPet,
+      pet_size: reqHasPet ? reqPetSize : null,
+      pet_surcharge: petSurcharge,
+      has_luggage: reqHasLuggage,
       status: 'pending',
     }).select('id').single();
 
@@ -144,14 +166,9 @@ const TripDetail = () => {
     toast('Solicitud cancelada.');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen pb-24 flex items-center justify-center">
-        <p className="text-muted-foreground">Cargando viaje...</p>
-      </div>
-    );
+  if (loading || profileLoading) {
+    return <div className="min-h-screen pb-24 flex items-center justify-center"><p className="text-muted-foreground">Cargando viaje...</p></div>;
   }
-
   if (!trip) return <div className="p-8 text-center text-muted-foreground">No encontramos este viaje.</div>;
 
   const driverName = driver ? `${driver.first_name} ${driver.last_name}`.trim() : 'Chofer';
@@ -182,9 +199,7 @@ const TripDetail = () => {
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Sale de</p>
                 <p className="font-semibold text-sm">{trip.origin}</p>
-                {trip.meeting_point && (
-                  <p className="text-[10px] text-accent mt-0.5">📍 {trip.meeting_point}</p>
-                )}
+                {trip.meeting_point && <p className="text-[10px] text-accent mt-0.5">📍 {trip.meeting_point}</p>}
                 <p className="text-xs text-muted-foreground mt-5">Llega a</p>
                 <p className="font-semibold text-sm">{trip.destination}</p>
               </div>
@@ -195,25 +210,20 @@ const TripDetail = () => {
             </div>
 
             <div className="flex items-center gap-4 py-3 border-t border-border text-sm text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" />
-                <span>{trip.date} · {trip.time}hs</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Users className="h-4 w-4" />
-                <span className="font-medium">{trip.available_seats} de {trip.total_seats} lugares libres</span>
-              </div>
+              <div className="flex items-center gap-1.5"><Clock className="h-4 w-4" /><span>{trip.date} · {trip.time}hs</span></div>
+              <div className="flex items-center gap-1.5"><Users className="h-4 w-4" /><span className="font-medium">{trip.available_seats} de {trip.total_seats} lugares libres</span></div>
             </div>
 
             <div className="flex gap-2 flex-wrap pt-2">
               {trip.accepts_pets && (
                 <Badge variant="secondary" className="text-[10px] gap-1 rounded-full px-2.5 py-1">
                   <PawPrint className="h-3 w-3" /> Acepta mascotas
+                  {driverPetSizes.length > 0 && ` (${driverPetSizes.map(s => PET_SIZE_LABELS[s] || s).join(', ')})`}
                 </Badge>
               )}
               {trip.has_pet && (
                 <Badge variant="secondary" className="text-[10px] gap-1 rounded-full px-2.5 py-1 bg-accent/10 text-accent">
-                  <PawPrint className="h-3 w-3" /> Chofer viaja con mascota
+                  <PawPrint className="h-3 w-3" /> Chofer viaja con mascota {trip.pet_size && `(${PET_SIZE_LABELS[trip.pet_size]})`}
                 </Badge>
               )}
               {trip.allows_luggage && (
@@ -253,9 +263,7 @@ const TripDetail = () => {
                     <span className="text-xs">{driver?.total_trips ?? 0} viajes</span>
                   </div>
                 </div>
-                {driver?.verified && (
-                  <p className="text-[10px] text-accent mt-1 font-medium">✓ Identidad y vehículo verificados</p>
-                )}
+                {driver?.verified && <p className="text-[10px] text-accent mt-1 font-medium">✓ Identidad y vehículo verificados</p>}
               </div>
             </div>
           </div>
@@ -277,37 +285,83 @@ const TripDetail = () => {
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isActive ? 'gradient-accent text-primary-foreground' : 'bg-muted text-muted-foreground/40'}`}>
                         <StepIcon className="h-3.5 w-3.5" />
                       </div>
-                      <span className={`text-[8px] font-medium ${isActive ? 'text-primary' : 'text-muted-foreground/40'}`}>
-                        {step.label}
-                      </span>
+                      <span className={`text-[8px] font-medium ${isActive ? 'text-primary' : 'text-muted-foreground/40'}`}>{step.label}</span>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Status messages */}
-              {bookingStatus === 'none' && !rejected && (
-                <div className="bg-secondary/60 rounded-xl p-3 mb-4 flex items-start gap-2.5">
-                  <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-semibold">¿Cómo funciona?</p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
-                      1. Reservás tu lugar → 2. El chofer te confirma → 3. Coordinan por chat → 4. Confirmás y pagás → 5. ¡Viaje confirmado!
-                    </p>
+              {/* Request form - only show when no booking yet */}
+              {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
+                <div className="space-y-3 mb-4">
+                  <div className="bg-secondary/60 rounded-xl p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Lugares</Label>
+                      <Select value={String(reqSeats)} onValueChange={v => setReqSeats(parseInt(v))}>
+                        <SelectTrigger className="w-20 h-8 rounded-lg text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: trip.available_seats }, (_, i) => (
+                            <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {trip.accepts_pets && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Label className="flex items-center gap-1.5 text-xs"><PawPrint className="h-3.5 w-3.5 text-accent" /> Viajo con mascota</Label>
+                          <Switch checked={reqHasPet} onCheckedChange={v => { setReqHasPet(v); if (!v) setReqPetSize(''); }} />
+                        </div>
+                        {reqHasPet && (
+                          <Select value={reqPetSize} onValueChange={setReqPetSize}>
+                            <SelectTrigger className="h-8 rounded-lg text-xs"><SelectValue placeholder="Tamaño de mascota" /></SelectTrigger>
+                            <SelectContent>
+                              {PET_SIZES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </>
+                    )}
+
+                    {trip.allows_luggage && (
+                      <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-1.5 text-xs"><Luggage className="h-3.5 w-3.5" /> Llevo equipaje grande</Label>
+                        <Switch checked={reqHasLuggage} onCheckedChange={setReqHasLuggage} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Price breakdown */}
+                  <div className="bg-primary/5 rounded-xl p-3 space-y-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{reqSeats} asiento{reqSeats > 1 ? 's' : ''} × ${Number(trip.price_per_seat).toLocaleString()}</span>
+                      <span>${basePrice.toLocaleString()}</span>
+                    </div>
+                    {petSurcharge > 0 && (
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Adicional mascota ({PET_SIZE_LABELS[reqPetSize]})</span>
+                        <span>+${petSurcharge.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-bold border-t border-border pt-1 mt-1">
+                      <span>Total estimado</span>
+                      <span className="text-primary">${totalPrice.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
               )}
 
+              {/* Status messages */}
               {bookingStatus === 'pending' && (
                 <div className="bg-ocean-light/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-ocean-light animate-pulse shrink-0" />
                   <div>
                     <p className="text-xs font-semibold">Solicitud enviada</p>
-                    <p className="text-[11px] text-muted-foreground">El chofer va a revisar tu perfil y decidir. Te avisamos cuando responda.</p>
+                    <p className="text-[11px] text-muted-foreground">Esperá la confirmación del chofer. Te avisamos cuando responda.</p>
                   </div>
                 </div>
               )}
-
               {bookingStatus === 'accepted' && (
                 <div className="bg-accent/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
@@ -317,7 +371,6 @@ const TripDetail = () => {
                   </div>
                 </div>
               )}
-
               {bookingStatus === 'coordinating' && (
                 <div className="bg-primary/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
                   <Handshake className="h-5 w-5 text-primary shrink-0" />
@@ -327,7 +380,6 @@ const TripDetail = () => {
                   </div>
                 </div>
               )}
-
               {bookingStatus === 'paid' && (
                 <div className="bg-accent/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
@@ -337,7 +389,6 @@ const TripDetail = () => {
                   </div>
                 </div>
               )}
-
               {rejected && (
                 <div className="bg-destructive/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
                   <XCircle className="h-5 w-5 text-destructive shrink-0" />
@@ -351,45 +402,25 @@ const TripDetail = () => {
               {/* Action buttons */}
               <div className="space-y-2">
                 {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
-                  <Button
-                    onClick={handleRequestSeat}
-                    disabled={submitting}
-                    className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold"
-                  >
+                  <Button onClick={handleRequestSeat} disabled={submitting} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
                     <Send className="h-4 w-4" /> {submitting ? 'Enviando...' : 'Reservar mi lugar'}
                   </Button>
                 )}
-
                 {bookingStatus === 'accepted' && (
-                  <Button
-                    onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)}
-                    className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold"
-                  >
+                  <Button onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
                     <MessageCircle className="h-4 w-4" /> Abrir chat de coordinación
                   </Button>
                 )}
-
                 {bookingStatus === 'paid' && (
-                  <Button
-                    onClick={() => navigate(`/chat/${trip.id}`)}
-                    className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold"
-                  >
+                  <Button onClick={() => navigate(`/chat/${trip.id}`)} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
                     <MessageCircle className="h-4 w-4" /> Chat con {driverName.split(' ')[0]}
                   </Button>
                 )}
-
                 {rejected && (
-                  <Button onClick={() => navigate('/search')} variant="outline" className="w-full h-12 rounded-xl gap-2 text-sm">
-                    Buscar otro viaje
-                  </Button>
+                  <Button onClick={() => navigate('/search')} variant="outline" className="w-full h-12 rounded-xl gap-2 text-sm">Buscar otro viaje</Button>
                 )}
-
                 {['pending', 'accepted', 'coordinating'].includes(bookingStatus) && (
-                  <Button
-                    variant="ghost"
-                    className="w-full h-10 text-xs text-destructive gap-1"
-                    onClick={handleCancel}
-                  >
+                  <Button variant="ghost" className="w-full h-10 text-xs text-destructive gap-1" onClick={handleCancel}>
                     <XCircle className="h-3.5 w-3.5" /> Cancelar solicitud
                   </Button>
                 )}

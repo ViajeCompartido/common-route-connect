@@ -13,21 +13,24 @@ const ActivateDriver = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     vehicle: '',
     plate: '',
     maxSeats: '4',
-    licenseUploaded: false,
   });
 
-  const handleFileChange = () => {
-    setForm({ ...form, licenseUploaded: true });
-    toast.success('Foto de licencia cargada');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLicenseFile(file);
+      toast.success('Foto de licencia cargada');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.licenseUploaded) {
+    if (!licenseFile) {
       toast.error('Necesitás subir tu licencia de conducir.');
       return;
     }
@@ -37,12 +40,28 @@ const ActivateDriver = () => {
     }
 
     setIsLoading(true);
-    // Create driver profile
+
+    // Upload license photo
+    const fileExt = licenseFile.name.split('.').pop();
+    const filePath = `${user.id}/license.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('licenses')
+      .upload(filePath, licenseFile, { upsert: true });
+
+    if (uploadError) {
+      setIsLoading(false);
+      toast.error('Error al subir la licencia. Intentá de nuevo.');
+      console.error(uploadError);
+      return;
+    }
+
+    // Create driver profile with license URL
     const { error: driverError } = await supabase.from('driver_profiles').insert({
       user_id: user.id,
       vehicle: form.vehicle,
-      plate: form.plate,
+      plate: form.plate.toUpperCase(),
       max_seats: parseInt(form.maxSeats),
+      license_url: filePath,
     });
 
     if (driverError) {
@@ -51,20 +70,19 @@ const ActivateDriver = () => {
         toast.error('Ya tenés un perfil de chofer activado.');
       } else {
         toast.error('Error al activar el perfil. Intentá de nuevo.');
+        console.error(driverError);
       }
       return;
     }
 
-    // Add driver role
-    const { error: roleError } = await supabase.from('user_roles').insert({
-      user_id: user.id,
-      role: 'driver' as const,
-    });
+    // Add driver role via secure function
+    const { error: roleError } = await supabase.rpc('add_driver_role');
 
     setIsLoading(false);
 
-    if (roleError && roleError.code !== '23505') {
+    if (roleError) {
       toast.error('Perfil creado pero hubo un error al asignar el rol.');
+      console.error(roleError);
     } else {
       toast.success('¡Perfil de chofer activado! Ya podés publicar viajes.');
       navigate('/publish');
@@ -123,7 +141,7 @@ const ActivateDriver = () => {
                 Subí una foto de tu licencia vigente. Es un requisito para poder publicar viajes.
               </p>
 
-              {form.licenseUploaded ? (
+              {licenseFile ? (
                 <div className="flex items-center gap-2 bg-accent/10 rounded-xl p-3">
                   <CheckCircle2 className="h-5 w-5 text-accent" />
                   <span className="text-sm font-medium text-accent">Licencia cargada</span>

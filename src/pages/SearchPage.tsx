@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SearchForm, { SearchFilters } from '@/components/SearchForm';
 import TripCard from '@/components/TripCard';
 import BottomNav from '@/components/BottomNav';
-import { mockTrips } from '@/data/mockData';
 import { computeMatchScore, MatchResult } from '@/lib/fuzzyMatch';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Trip } from '@/types';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ScoredTrip {
   trip: Trip;
@@ -23,16 +23,107 @@ const compatibilityColor = (score: number) => {
 
 const SearchPage = () => {
   const navigate = useNavigate();
-  const [results, setResults] = useState<ScoredTrip[]>(
-    mockTrips.map(trip => ({ trip, match: { tripId: trip.id, overallScore: 1, originMatch: { match: true, score: 1, label: '' }, destinationMatch: { match: true, score: 1, label: '' }, timeMatch: { match: true, diffMinutes: 0, label: '' }, dateMatch: { match: true, label: '' }, compatibilityLabel: '' } }))
-  );
+  const [results, setResults] = useState<ScoredTrip[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSearch = (filters: SearchFilters) => {
+  // Load all active trips on mount
+  useEffect(() => {
+    loadTrips();
+  }, []);
+
+  const loadTrips = async () => {
+    setLoading(true);
+    const { data: trips, error } = await supabase
+      .from('trips')
+      .select('*')
+      .in('status', ['active'])
+      .gt('available_seats', 0)
+      .order('date', { ascending: true });
+
+    if (error || !trips) {
+      console.error('Error loading trips:', error);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch driver profiles for all trips
+    const driverIds = [...new Set(trips.map(t => t.driver_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, average_rating, total_trips, verified')
+      .in('id', driverIds);
+
+    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
+    const mapped = trips.map(t => mapTrip(t, profileMap.get(t.driver_id) ?? null));
+    setResults(mapped.map(trip => ({ trip, match: defaultMatch(trip.id) })));
+    setLoading(false);
+  };
+
+  const mapTrip = (t: any, profile: any): Trip => ({
+    id: t.id,
+    driverId: t.driver_id,
+    driverName: profile ? `${profile.first_name} ${profile.last_name}`.trim() || 'Chofer' : 'Chofer',
+    driverRating: profile?.average_rating ?? 0,
+    driverTotalTrips: profile?.total_trips ?? 0,
+    driverVerified: profile?.verified ?? false,
+    origin: t.origin,
+    destination: t.destination,
+    zone: t.zone,
+    meetingPoint: t.meeting_point,
+    date: t.date,
+    time: t.time,
+    availableSeats: t.available_seats,
+    totalSeats: t.total_seats,
+    pricePerSeat: Number(t.price_per_seat),
+    acceptsPets: t.accepts_pets,
+    hasPet: t.has_pet,
+    allowsLuggage: t.allows_luggage,
+    observations: t.observations,
+    status: t.status,
+  });
+
+  const defaultMatch = (id: string): MatchResult => ({
+    tripId: id, overallScore: 1,
+    originMatch: { match: true, score: 1, label: '' },
+    destinationMatch: { match: true, score: 1, label: '' },
+    timeMatch: { match: true, diffMinutes: 0, label: '' },
+    dateMatch: { match: true, label: '' },
+    compatibilityLabel: '',
+  });
+
+  const handleSearch = async (filters: SearchFilters) => {
     setHasSearched(true);
-    
-    // First apply hard filters (pets, luggage, rating, seats)
-    let filtered = mockTrips.filter(t => {
+    setLoading(true);
+
+    // Fetch active trips from DB
+    const { data: trips } = await supabase
+      .from('trips')
+      .select('*')
+      .in('status', ['active'])
+      .gt('available_seats', 0);
+
+    if (!trips) {
+      setLoading(false);
+      return;
+    }
+
+    // Fetch driver profiles
+    const driverIds = [...new Set(trips.map(t => t.driver_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, average_rating, total_trips, verified')
+      .in('id', driverIds);
+
+    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
+    const mapped = trips.map(t => mapTrip(t, profileMap.get(t.driver_id) ?? null));
+    applyFilters(mapped, filters);
+    setLoading(false);
+  };
+
+  const applyFilters = (trips: Trip[], filters: SearchFilters) => {
+    // Hard filters
+    let filtered = trips.filter(t => {
       if (filters.acceptsPets && !t.acceptsPets) return false;
       if (filters.driverHasPet && !t.hasPet) return false;
       if (filters.allowsLuggage && !t.allowsLuggage) return false;
@@ -41,7 +132,7 @@ const SearchPage = () => {
       return true;
     });
 
-    // Then compute fuzzy match scores
+    // Fuzzy match scores
     const scored: ScoredTrip[] = filtered
       .map(trip => ({
         trip,
@@ -51,7 +142,6 @@ const SearchPage = () => {
         ),
       }))
       .filter(s => {
-        // At least origin or destination must have some match if provided
         if (filters.origin && !s.match.originMatch.match) return false;
         if (filters.destination && !s.match.destinationMatch.match) return false;
         return s.match.overallScore >= 0.2;
@@ -77,50 +167,58 @@ const SearchPage = () => {
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
-        <p className="text-sm text-muted-foreground mb-4">
-          {results.length} viaje{results.length !== 1 ? 's' : ''} {hasSearched ? 'compatible' : 'disponible'}{results.length !== 1 ? 's' : ''}
-        </p>
-        <div className="space-y-3">
-          {results.map(({ trip, match }, i) => (
-            <motion.div
-              key={trip.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              {hasSearched && match.compatibilityLabel && (
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${compatibilityColor(match.overallScore)}`}>
-                    <Sparkles className="h-3 w-3" />
-                    {match.compatibilityLabel}
-                  </span>
-                  {match.originMatch.label && (
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                      Origen: {match.originMatch.label}
-                    </span>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-sm">Buscando viajes...</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground mb-4">
+              {results.length} viaje{results.length !== 1 ? 's' : ''} {hasSearched ? 'compatible' : 'disponible'}{results.length !== 1 ? 's' : ''}
+            </p>
+            <div className="space-y-3">
+              {results.map(({ trip, match }, i) => (
+                <motion.div
+                  key={trip.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  {hasSearched && match.compatibilityLabel && (
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${compatibilityColor(match.overallScore)}`}>
+                        <Sparkles className="h-3 w-3" />
+                        {match.compatibilityLabel}
+                      </span>
+                      {match.originMatch.label && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          Origen: {match.originMatch.label}
+                        </span>
+                      )}
+                      {match.timeMatch.label && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {match.timeMatch.label}
+                        </span>
+                      )}
+                      {match.dateMatch.label && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {match.dateMatch.label}
+                        </span>
+                      )}
+                    </div>
                   )}
-                  {match.timeMatch.label && (
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                      {match.timeMatch.label}
-                    </span>
-                  )}
-                  {match.dateMatch.label && (
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                      {match.dateMatch.label}
-                    </span>
-                  )}
+                  <TripCard trip={trip} index={i} />
+                </motion.div>
+              ))}
+              {results.length === 0 && (
+                <div className="text-center py-16">
+                  <p className="text-muted-foreground text-sm">No encontramos viajes compatibles.</p>
+                  <p className="text-muted-foreground/60 text-xs mt-1">Probá ampliando la zona o cambiando el horario.</p>
                 </div>
               )}
-              <TripCard trip={trip} index={i} />
-            </motion.div>
-          ))}
-          {results.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-muted-foreground text-sm">No encontramos viajes compatibles.</p>
-              <p className="text-muted-foreground/60 text-xs mt-1">Probá ampliando la zona o cambiando el horario.</p>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       <BottomNav role="passenger" />

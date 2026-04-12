@@ -9,16 +9,45 @@ import { Textarea } from '@/components/ui/textarea';
 import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const NeedRide = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     origin: '', destination: '', date: '', time: '',
     seats: '1', hasPet: false, hasLuggage: false, message: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error('Tenés que iniciar sesión primero.');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.from('ride_requests').insert({
+      passenger_id: user.id,
+      origin: form.origin,
+      destination: form.destination,
+      date: form.date,
+      time: form.time,
+      seats: parseInt(form.seats),
+      has_pet: form.hasPet,
+      has_luggage: form.hasLuggage,
+      message: form.message || null,
+      status: 'active',
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.error('No pudimos publicar tu necesidad. Intentá de nuevo.');
+      console.error(error);
+      return;
+    }
     toast.success('¡Listo! Tu búsqueda está publicada. Te avisamos cuando haya coincidencias.');
     navigate('/my-trips');
   };
@@ -105,8 +134,8 @@ const NeedRide = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full h-12 gradient-accent text-primary-foreground rounded-xl text-sm font-semibold gap-2">
-                <Send className="h-4 w-4" /> Publicar mi necesidad de viaje
+              <Button type="submit" disabled={loading} className="w-full h-12 gradient-accent text-primary-foreground rounded-xl text-sm font-semibold gap-2">
+                <Send className="h-4 w-4" /> {loading ? 'Publicando...' : 'Publicar mi necesidad de viaje'}
               </Button>
             </form>
           </div>

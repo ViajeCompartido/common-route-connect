@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Calendar, Clock, Users, DollarSign, PawPrint, Luggage, Car, Info, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -16,14 +16,30 @@ import { useAuth } from '@/contexts/AuthContext';
 const PublishTrip = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const maxVehicleSeats = 4;
+  const [maxVehicleSeats, setMaxVehicleSeats] = useState(4);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     origin: '', destination: '', date: '', time: '',
-    totalSeats: String(maxVehicleSeats), pricePerSeat: '',
+    totalSeats: '4', pricePerSeat: '',
     acceptsPets: false, hasPet: false, allowsLuggage: true,
     observations: '',
   });
+
+  // Fetch driver's max seats from their profile
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('driver_profiles')
+      .select('max_seats')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setMaxVehicleSeats(data.max_seats);
+          setForm(f => ({ ...f, totalSeats: String(data.max_seats) }));
+        }
+      });
+  }, [user]);
 
   const priceNum = parseInt(form.pricePerSeat) || 0;
   const matchedRoute = routePriceRanges.find(r => {

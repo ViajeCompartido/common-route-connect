@@ -16,7 +16,10 @@ const SearchPage = () => {
     if (filters.destination) filtered = filtered.filter(t => t.destination.toLowerCase().includes(filters.destination.toLowerCase()));
     if (filters.date) filtered = filtered.filter(t => t.date === filters.date);
     if (filters.acceptsPets) filtered = filtered.filter(t => t.acceptsPets);
+    if (filters.driverHasPet) filtered = filtered.filter(t => t.hasPet);
     if (filters.allowsLuggage) filtered = filtered.filter(t => t.allowsLuggage);
+    if (filters.minRating > 0) filtered = filtered.filter(t => t.driverRating >= filters.minRating);
+    if (filters.minSeats > 1) filtered = filtered.filter(t => t.availableSeats >= filters.minSeats);
     setResults(filtered);
   };
 
@@ -24,24 +27,27 @@ const SearchPage = () => {
     <div className="min-h-screen pb-20">
       <div className="gradient-ocean px-4 pt-8 pb-6">
         <div className="max-w-lg mx-auto">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70">
             <ArrowLeft className="h-4 w-4" /> Volver
           </button>
           <h1 className="text-lg font-heading font-bold text-primary-foreground mb-4">Buscar viajes</h1>
-          <div className="bg-card rounded-xl p-4">
+          <div className="bg-card rounded-2xl p-5 shadow-ocean">
             <SearchForm onSearch={handleSearch} />
           </div>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
-        <p className="text-sm text-muted-foreground mb-4">{results.length} viajes encontrados</p>
+        <p className="text-sm text-muted-foreground mb-4">{results.length} viaje{results.length !== 1 ? 's' : ''} encontrado{results.length !== 1 ? 's' : ''}</p>
         <div className="space-y-3">
           {results.map((trip, i) => (
             <TripCard key={trip.id} trip={trip} index={i} />
           ))}
           {results.length === 0 && (
-            <p className="text-center text-muted-foreground py-12">No se encontraron viajes con esos filtros.</p>
+            <div className="text-center py-16">
+              <p className="text-muted-foreground text-sm">No se encontraron viajes con esos filtros.</p>
+              <p className="text-muted-foreground/60 text-xs mt-1">Probá con otros criterios de búsqueda.</p>
+            </div>
           )}
         </div>
       </div>

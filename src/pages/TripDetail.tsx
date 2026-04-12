@@ -1,5 +1,5 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, Star, MessageCircle, BadgeCheck, Car, Send, CheckCircle2, CreditCard, XCircle, Info } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, Star, MessageCircle, BadgeCheck, Car, Send, CheckCircle2, CreditCard, XCircle, Info, AlertTriangle, Handshake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import StarRating from '@/components/StarRating';
@@ -9,13 +9,14 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-type BookingStep = 'none' | 'pending' | 'accepted' | 'rejected' | 'paid';
+type BookingStep = 'none' | 'pending' | 'accepted' | 'coordinating' | 'confirmed' | 'paid';
 
 const flowSteps = [
   { key: 'none', label: 'Solicitar', icon: Send },
   { key: 'pending', label: 'Esperar', icon: Clock },
-  { key: 'accepted', label: 'Pagar', icon: CreditCard },
-  { key: 'paid', label: 'Chat', icon: MessageCircle },
+  { key: 'accepted', label: 'Coordinar', icon: MessageCircle },
+  { key: 'confirmed', label: 'Pagar', icon: CreditCard },
+  { key: 'paid', label: '¡Listo!', icon: CheckCircle2 },
 ];
 
 const TripDetail = () => {
@@ -23,6 +24,7 @@ const TripDetail = () => {
   const navigate = useNavigate();
   const trip = mockTrips.find(t => t.id === id);
   const [bookingStatus, setBookingStatus] = useState<BookingStep>('none');
+  const [rejected, setRejected] = useState(false);
 
   if (!trip) return <div className="p-8 text-center text-muted-foreground">No encontramos este viaje.</div>;
 
@@ -53,6 +55,9 @@ const TripDetail = () => {
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Sale de</p>
                 <p className="font-semibold text-sm">{trip.origin}</p>
+                {trip.meetingPoint && (
+                  <p className="text-[10px] text-accent mt-0.5">📍 {trip.meetingPoint}</p>
+                )}
                 <p className="text-xs text-muted-foreground mt-5">Llega a</p>
                 <p className="font-semibold text-sm">{trip.destination}</p>
               </div>
@@ -81,12 +86,17 @@ const TripDetail = () => {
               )}
               {trip.hasPet && (
                 <Badge variant="secondary" className="text-[10px] gap-1 rounded-full px-2.5 py-1 bg-accent/10 text-accent">
-                  <PawPrint className="h-3 w-3" /> El chofer viaja con mascota
+                  <PawPrint className="h-3 w-3" /> Chofer viaja con mascota
                 </Badge>
               )}
               {trip.allowsLuggage && (
                 <Badge variant="secondary" className="text-[10px] gap-1 rounded-full px-2.5 py-1">
                   <Luggage className="h-3 w-3" /> Equipaje grande OK
+                </Badge>
+              )}
+              {trip.zone && (
+                <Badge variant="secondary" className="text-[10px] gap-1 rounded-full px-2.5 py-1">
+                  <MapPin className="h-3 w-3" /> {trip.zone}
                 </Badge>
               )}
             </div>
@@ -113,7 +123,7 @@ const TripDetail = () => {
                   </div>
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <Car className="h-3.5 w-3.5" />
-                    <span className="text-xs">{trip.driverTotalTrips} viajes realizados</span>
+                    <span className="text-xs">{trip.driverTotalTrips} viajes</span>
                   </div>
                 </div>
                 {trip.driverVerified && (
@@ -124,7 +134,7 @@ const TripDetail = () => {
 
             <div className="space-y-2">
               <h4 className="text-xs font-heading font-bold text-muted-foreground">Qué dicen los pasajeros</h4>
-              {mockReviews.slice(0, 3).map(r => (
+              {mockReviews.slice(0, 2).map(r => (
                 <div key={r.id} className="bg-secondary/60 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground text-[10px] font-bold shrink-0">
@@ -155,25 +165,22 @@ const TripDetail = () => {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isActive ? 'gradient-accent text-primary-foreground' : 'bg-muted text-muted-foreground/40'}`}>
                       <StepIcon className="h-3.5 w-3.5" />
                     </div>
-                    <span className={`text-[9px] font-medium ${isActive ? 'text-primary' : 'text-muted-foreground/40'}`}>
+                    <span className={`text-[8px] font-medium ${isActive ? 'text-primary' : 'text-muted-foreground/40'}`}>
                       {step.label}
                     </span>
-                    {i < flowSteps.length - 1 && (
-                      <div className={`absolute h-0.5 w-full ${isActive ? 'bg-primary' : 'bg-muted'}`} />
-                    )}
                   </div>
                 );
               })}
             </div>
 
             {/* Status messages */}
-            {bookingStatus === 'none' && (
+            {bookingStatus === 'none' && !rejected && (
               <div className="bg-secondary/60 rounded-xl p-3 mb-4 flex items-start gap-2.5">
                 <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs font-semibold">¿Cómo funciona?</p>
                   <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
-                    1. Mandás tu solicitud → 2. El chofer acepta o rechaza → 3. Si acepta, pagás → 4. Se abre el chat para coordinar.
+                    1. Pedís tu lugar → 2. El chofer acepta → 3. Coordinan por chat (punto de encuentro, horario, mascota) → 4. Confirmás y pagás → 5. ¡Viaje confirmado!
                   </p>
                 </div>
               </div>
@@ -194,78 +201,141 @@ const TripDetail = () => {
                 <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
                 <div>
                   <p className="text-xs font-semibold text-accent">¡Te aceptaron!</p>
-                  <p className="text-[11px] text-muted-foreground">Ahora podés pagar tu asiento. Recién después se habilita el chat con el chofer.</p>
+                  <p className="text-[11px] text-muted-foreground">Ahora se abre un chat breve para coordinar punto de encuentro, horario y detalles.</p>
                 </div>
               </div>
             )}
 
-            {bookingStatus === 'rejected' && (
-              <div className="bg-destructive/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
-                <XCircle className="h-5 w-5 text-destructive shrink-0" />
+            {bookingStatus === 'coordinating' && (
+              <div className="bg-primary/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
+                <Handshake className="h-5 w-5 text-primary shrink-0" />
                 <div>
-                  <p className="text-xs font-semibold text-destructive">El chofer no aceptó</p>
-                  <p className="text-[11px] text-muted-foreground">No te preocupes, hay muchos viajes disponibles. Buscá otro que te sirva.</p>
+                  <p className="text-xs font-semibold text-primary">Coordinando</p>
+                  <p className="text-[11px] text-muted-foreground">Usá el chat para confirmar punto de encuentro, horario exacto y cualquier detalle. Cuando estés seguro/a, confirmá y pagá.</p>
+                </div>
+              </div>
+            )}
+
+            {bookingStatus === 'confirmed' && (
+              <div className="bg-accent/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
+                <CreditCard className="h-5 w-5 text-accent shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-accent">¡Coordinación lista!</p>
+                  <p className="text-[11px] text-muted-foreground">Ya coordinaste con el chofer. Pagá para confirmar tu lugar.</p>
                 </div>
               </div>
             )}
 
             {bookingStatus === 'paid' && (
-              <div className="bg-primary/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
-                <MessageCircle className="h-5 w-5 text-primary shrink-0" />
+              <div className="bg-accent/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
+                <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
                 <div>
-                  <p className="text-xs font-semibold text-primary">¡Todo listo!</p>
-                  <p className="text-[11px] text-muted-foreground">Pago confirmado. Ya podés chatear con el chofer para coordinar punto de encuentro, horario exacto y cualquier detalle.</p>
+                  <p className="text-xs font-semibold text-accent">¡Viaje confirmado!</p>
+                  <p className="text-[11px] text-muted-foreground">Pago recibido. Podés seguir usando el chat para coordinar cualquier detalle de último momento.</p>
+                </div>
+              </div>
+            )}
+
+            {rejected && (
+              <div className="bg-destructive/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
+                <XCircle className="h-5 w-5 text-destructive shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-destructive">El chofer no aceptó</p>
+                  <p className="text-[11px] text-muted-foreground">No te preocupes, hay muchos viajes disponibles.</p>
                 </div>
               </div>
             )}
 
             {/* Action buttons */}
             <div className="space-y-2">
-              {bookingStatus === 'none' && (
+              {bookingStatus === 'none' && !rejected && (
                 <Button
-                  onClick={() => { setBookingStatus('pending'); toast.success('¡Solicitud enviada! El chofer te va a responder pronto.'); }}
+                  onClick={() => { setBookingStatus('pending'); toast.success('¡Solicitud enviada!'); }}
                   className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold"
                 >
                   <Send className="h-4 w-4" /> Pedir mi lugar
                 </Button>
               )}
+
               {bookingStatus === 'pending' && (
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    onClick={() => { setBookingStatus('accepted'); toast.success('¡El chofer aceptó tu solicitud!'); }}
-                    variant="outline"
-                    className="text-xs h-11 rounded-xl gap-1 border-accent/30 text-accent"
+                    onClick={() => { setBookingStatus('accepted'); toast.success('¡El chofer aceptó! Se abre el chat de coordinación.'); }}
+                    variant="outline" className="text-xs h-11 rounded-xl gap-1 border-accent/30 text-accent"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" /> Simular: Acepta
                   </Button>
                   <Button
-                    onClick={() => { setBookingStatus('rejected'); toast.error('El chofer rechazó la solicitud.'); }}
-                    variant="outline"
-                    className="text-xs h-11 rounded-xl gap-1 border-destructive/30 text-destructive"
+                    onClick={() => { setRejected(true); setBookingStatus('none'); toast.error('El chofer rechazó la solicitud.'); }}
+                    variant="outline" className="text-xs h-11 rounded-xl gap-1 border-destructive/30 text-destructive"
                   >
                     <XCircle className="h-3.5 w-3.5" /> Simular: Rechaza
                   </Button>
                 </div>
               )}
+
               {bookingStatus === 'accepted' && (
                 <Button
-                  onClick={() => { setBookingStatus('paid'); toast.success('¡Pago confirmado! Ya podés chatear con el chofer.'); }}
+                  onClick={() => { setBookingStatus('coordinating'); navigate(`/chat/${trip.id}?phase=coordination`); }}
+                  className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold"
+                >
+                  <MessageCircle className="h-4 w-4" /> Abrir chat de coordinación
+                </Button>
+              )}
+
+              {bookingStatus === 'coordinating' && (
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)}
+                    variant="outline" className="w-full h-11 rounded-xl gap-2 text-sm"
+                  >
+                    <MessageCircle className="h-4 w-4" /> Seguir coordinando
+                  </Button>
+                  <Button
+                    onClick={() => { setBookingStatus('confirmed'); toast.success('¡Coordinación confirmada! Ya podés pagar.'); }}
+                    className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold"
+                  >
+                    <Handshake className="h-4 w-4" /> Ya coordinamos, quiero pagar
+                  </Button>
+                </div>
+              )}
+
+              {bookingStatus === 'confirmed' && (
+                <Button
+                  onClick={() => { setBookingStatus('paid'); toast.success('¡Pago confirmado! Viaje asegurado.'); }}
                   className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold"
                 >
                   <CreditCard className="h-4 w-4" /> Pagar con Mercado Pago — ${trip.pricePerSeat.toLocaleString()}
                 </Button>
               )}
-              {bookingStatus === 'rejected' && (
-                <Button onClick={() => navigate('/search')} variant="outline" className="w-full h-12 rounded-xl gap-2 text-sm">
-                  Buscar otro viaje
-                </Button>
-              )}
+
               {bookingStatus === 'paid' && (
                 <Button
                   onClick={() => navigate(`/chat/${trip.id}`)}
                   className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold"
                 >
-                  <MessageCircle className="h-4 w-4" /> Abrir chat con {trip.driverName.split(' ')[0]}
+                  <MessageCircle className="h-4 w-4" /> Chat con {trip.driverName.split(' ')[0]}
+                </Button>
+              )}
+
+              {rejected && (
+                <Button onClick={() => navigate('/search')} variant="outline" className="w-full h-12 rounded-xl gap-2 text-sm">
+                  Buscar otro viaje
+                </Button>
+              )}
+
+              {/* Cancel button for active states */}
+              {['pending', 'accepted', 'coordinating', 'confirmed'].includes(bookingStatus) && (
+                <Button
+                  variant="ghost"
+                  className="w-full h-10 text-xs text-destructive gap-1"
+                  onClick={() => {
+                    setBookingStatus('none');
+                    setRejected(false);
+                    toast('Solicitud cancelada.');
+                  }}
+                >
+                  <XCircle className="h-3.5 w-3.5" /> Cancelar solicitud
                 </Button>
               )}
             </div>

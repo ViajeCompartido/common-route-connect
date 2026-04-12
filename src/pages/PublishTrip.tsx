@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, Clock, Users, DollarSign, PawPrint, Luggage, Car, Info } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, Users, DollarSign, PawPrint, Luggage, Car, Info, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import BottomNav from '@/components/BottomNav';
+import { routePriceRanges } from '@/data/mockData';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -15,11 +17,30 @@ const PublishTrip = () => {
     origin: '', destination: '', date: '', time: '',
     totalSeats: '4', pricePerSeat: '',
     acceptsPets: false, hasPet: false, allowsLuggage: true,
+    observations: '',
   });
+
+  const priceNum = parseInt(form.pricePerSeat) || 0;
+  // Simple route matching for demo
+  const matchedRoute = routePriceRanges.find(r => {
+    const o = form.origin.toLowerCase();
+    const d = form.destination.toLowerCase();
+    return (r.routeKey.includes('buenos_aires') && (o.includes('buenos aires') || o.includes('palermo') || o.includes('belgrano') || o.includes('caballito')) && (d.includes('la plata') || d.includes('plata')))
+      || (r.routeKey.includes('punta_alta') && o.includes('punta alta') && d.includes('bahía'))
+      || (r.routeKey.includes('cordoba') && o.includes('córdoba') && d.includes('rosario'))
+      || (r.routeKey.includes('mar_del_plata') && (o.includes('buenos aires') || o.includes('palermo') || o.includes('belgrano')) && d.includes('mar del plata'));
+  });
+
+  const priceWarning = matchedRoute && priceNum > matchedRoute.max;
+  const priceSuggestion = matchedRoute && priceNum === 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('¡Listo! Tu viaje ya está publicado. Los pasajeros lo van a poder encontrar en la búsqueda.');
+    if (priceWarning) {
+      toast.error(`El precio supera el máximo permitido para esta ruta ($${matchedRoute!.max.toLocaleString()}).`);
+      return;
+    }
+    toast.success('¡Listo! Tu viaje ya está publicado.');
     navigate('/');
   };
 
@@ -34,17 +55,16 @@ const PublishTrip = () => {
             <Car className="h-5 w-5 text-accent" />
             <h1 className="text-lg font-heading font-bold text-primary-foreground">Publicar un viaje</h1>
           </div>
-          <p className="text-sm text-primary-foreground/70">Cargá los datos de tu próximo viaje y encontrá pasajeros para compartir gastos.</p>
+          <p className="text-sm text-primary-foreground/70">Cargá los datos y encontrá pasajeros compatibles.</p>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-2 space-y-3">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Info card */}
           <div className="bg-accent/10 rounded-2xl p-4 flex items-start gap-2.5 mb-3">
             <Info className="h-4 w-4 text-accent shrink-0 mt-0.5" />
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Tu viaje va a aparecer en las búsquedas. Cuando un pasajero pida un lugar, te llega la solicitud y vos decidís si aceptás o no.
+              Tu viaje aparece en las búsquedas y también se muestra a pasajeros que publicaron que necesitan viajar en rutas compatibles.
             </p>
           </div>
 
@@ -53,7 +73,7 @@ const PublishTrip = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
-                <Input placeholder="¿De dónde salís?" value={form.origin} onChange={e => setForm({ ...form, origin: e.target.value })} className="pl-10 h-12 rounded-xl" required />
+                <Input placeholder="Zona o barrio de salida" value={form.origin} onChange={e => setForm({ ...form, origin: e.target.value })} className="pl-10 h-12 rounded-xl" required />
               </div>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
@@ -68,7 +88,7 @@ const PublishTrip = () => {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-[10px] text-muted-foreground mb-1 block">Hora de salida</Label>
+                  <Label className="text-[10px] text-muted-foreground mb-1 block">Hora aproximada</Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className="pl-10 h-12 rounded-xl" required />
@@ -87,10 +107,34 @@ const PublishTrip = () => {
                   <Label className="text-[10px] text-muted-foreground mb-1 block">Precio por asiento</Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input type="number" placeholder="Ej: 3000" value={form.pricePerSeat} onChange={e => setForm({ ...form, pricePerSeat: e.target.value })} className="pl-10 h-12 rounded-xl" required />
+                    <Input type="number" placeholder={matchedRoute ? `Sugerido: $${matchedRoute.suggested.toLocaleString()}` : 'Ej: 3000'} value={form.pricePerSeat} onChange={e => setForm({ ...form, pricePerSeat: e.target.value })} className="pl-10 h-12 rounded-xl" required />
                   </div>
                 </div>
               </div>
+
+              {/* Price guidance */}
+              {matchedRoute && (
+                <div className={`rounded-xl p-3 flex items-start gap-2 text-[11px] ${priceWarning ? 'bg-destructive/10 border border-destructive/20' : 'bg-secondary/60'}`}>
+                  {priceWarning ? (
+                    <>
+                      <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-destructive">El precio supera el máximo permitido</p>
+                        <p className="text-muted-foreground">Para esta ruta el rango es ${matchedRoute.min.toLocaleString()} – ${matchedRoute.max.toLocaleString()}. Sugerido: ${matchedRoute.suggested.toLocaleString()}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-muted-foreground">
+                          Precio sugerido: <span className="font-semibold text-foreground">${matchedRoute.suggested.toLocaleString()}</span> · Rango: ${matchedRoute.min.toLocaleString()} – ${matchedRoute.max.toLocaleString()}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="border-t border-border pt-4 space-y-4">
                 <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider">Opciones del viaje</h3>
@@ -112,6 +156,17 @@ const PublishTrip = () => {
                   </Label>
                   <Switch id="allowsLuggage" checked={form.allowsLuggage} onCheckedChange={v => setForm({ ...form, allowsLuggage: v })} />
                 </div>
+              </div>
+
+              <div>
+                <Label className="text-[10px] text-muted-foreground mb-1 block">Observaciones (opcional)</Label>
+                <Textarea
+                  placeholder="Ej: Salgo puntual, paso por autopista, acepto mascotas chicas..."
+                  value={form.observations}
+                  onChange={e => setForm({ ...form, observations: e.target.value })}
+                  className="rounded-xl resize-none"
+                  rows={3}
+                />
               </div>
 
               <Button type="submit" className="w-full h-12 gradient-accent text-primary-foreground rounded-xl text-sm font-semibold gap-2">

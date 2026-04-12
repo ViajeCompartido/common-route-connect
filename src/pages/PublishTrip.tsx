@@ -100,11 +100,14 @@ const PublishTrip = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground mb-1 block">Lugares disponibles</Label>
+                  <Label className="text-[10px] text-muted-foreground mb-1 block">Lugares disponibles (máx. {maxVehicleSeats})</Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input type="number" min="1" max="6" value={form.totalSeats} onChange={e => setForm({ ...form, totalSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
+                    <Input type="number" min={Math.max(1, bookedSeats)} max={maxVehicleSeats} value={form.totalSeats} onChange={e => setForm({ ...form, totalSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
                   </div>
+                  {bookedSeats > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Ya tenés {bookedSeats} asiento{bookedSeats > 1 ? 's' : ''} reservado{bookedSeats > 1 ? 's' : ''}. No podés bajar de esa cantidad.</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground mb-1 block">Precio por asiento</Label>

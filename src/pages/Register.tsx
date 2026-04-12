@@ -1,21 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Car, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Car } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
-const Login = () => {
+const Register = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({
+    firstName: '', lastName: '', email: '', phone: '', password: '',
+  });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('¡Bienvenido de vuelta!');
-    navigate('/');
+    toast.success('¡Cuenta creada! Elegí cómo querés usar la app.');
+    navigate('/get-started');
   };
 
   return (
@@ -38,17 +39,51 @@ const Login = () => {
         className="flex-1 bg-background rounded-t-3xl px-4 pt-8 pb-10"
       >
         <div className="max-w-md mx-auto">
-          <h1 className="text-xl font-heading font-bold mb-1">Iniciá sesión</h1>
-          <p className="text-sm text-muted-foreground mb-6">Ingresá con tu email y contraseña.</p>
+          <h1 className="text-xl font-heading font-bold mb-1">Crear tu cuenta</h1>
+          <p className="text-sm text-muted-foreground mb-6">Completá tus datos para empezar a viajar.</p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Nombre"
+                  value={form.firstName}
+                  onChange={e => setForm({ ...form, firstName: e.target.value })}
+                  className="pl-10 h-12 rounded-xl"
+                  required
+                />
+              </div>
+              <div>
+                <Input
+                  placeholder="Apellido"
+                  value={form.lastName}
+                  onChange={e => setForm({ ...form, lastName: e.target.value })}
+                  className="h-12 rounded-xl"
+                  required
+                />
+              </div>
+            </div>
+
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="email"
                 placeholder="Tu email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                className="pl-10 h-12 rounded-xl"
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="tel"
+                placeholder="Tu celular"
+                value={form.phone}
+                onChange={e => setForm({ ...form, phone: e.target.value })}
                 className="pl-10 h-12 rounded-xl"
                 required
               />
@@ -58,9 +93,9 @@ const Login = () => {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Tu contraseña"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
+                placeholder="Creá una contraseña"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
                 className="pl-10 pr-10 h-12 rounded-xl"
                 required
               />
@@ -69,21 +104,15 @@ const Login = () => {
               </button>
             </div>
 
-            <div className="text-right">
-              <button type="button" className="text-xs text-primary font-medium active:opacity-70">
-                ¿Olvidaste tu contraseña?
-              </button>
-            </div>
-
             <Button type="submit" className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm">
-              Entrar
+              Crear mi cuenta
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            ¿No tenés cuenta?{' '}
-            <button onClick={() => navigate('/register')} className="text-primary font-semibold">
-              Crear cuenta
+            ¿Ya tenés cuenta?{' '}
+            <button onClick={() => navigate('/login')} className="text-primary font-semibold">
+              Iniciá sesión
             </button>
           </p>
         </div>
@@ -92,4 +121,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;

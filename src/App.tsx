@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import SearchPage from "./pages/SearchPage";
 import TripDetail from "./pages/TripDetail";
+import Chat from "./pages/Chat";
 import PublishTrip from "./pages/PublishTrip";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";

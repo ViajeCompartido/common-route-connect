@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 const VerifiedDrivers = () => {
   return (
     <div className="py-2">
-      <h2 className="text-base font-heading font-bold mb-4">Choferes destacados</h2>
+      <h2 className="text-base font-heading font-bold mb-1">Choferes destacados</h2>
+      <p className="text-xs text-muted-foreground mb-4">Perfiles verificados y con buena reputación.</p>
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
         {verifiedDrivers.map((d, i) => (
           <motion.div
@@ -13,7 +14,7 @@ const VerifiedDrivers = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 + i * 0.08 }}
-            className="shrink-0 w-28 bg-card border border-border rounded-xl p-3 text-center"
+            className="shrink-0 w-28 bg-card border border-border rounded-2xl p-3 text-center"
           >
             <div className="w-12 h-12 rounded-full gradient-ocean mx-auto flex items-center justify-center text-primary-foreground font-heading font-bold text-base mb-2">
               {d.name.charAt(0)}

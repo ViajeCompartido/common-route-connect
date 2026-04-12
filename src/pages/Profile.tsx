@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Calendar, Settings, LogOut, BadgeCheck, Car, MapPin } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Calendar, Settings, LogOut, BadgeCheck, Car, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
@@ -22,7 +22,6 @@ const Profile = () => {
 
       <div className="max-w-lg mx-auto px-4 -mt-12 space-y-3">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Profile header */}
           <div className="bg-card rounded-2xl p-5 border border-border text-center">
             <div className="w-20 h-20 rounded-full gradient-ocean mx-auto flex items-center justify-center text-primary-foreground text-2xl font-heading font-bold -mt-14 border-4 border-card shadow-ocean">
               {user.name.charAt(0)}
@@ -31,25 +30,28 @@ const Profile = () => {
               <h2 className="text-lg font-heading font-bold">{user.name}</h2>
               {user.verified && <BadgeCheck className="h-5 w-5 text-accent" />}
             </div>
-            <p className="text-xs text-muted-foreground capitalize mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {user.role === 'passenger' ? 'Pasajero' : user.role === 'driver' ? 'Chofer' : 'Administrador'}
-              {user.verified && ' · Verificado'}
             </p>
+            {user.verified && (
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <Shield className="h-3 w-3 text-accent" />
+                <span className="text-[10px] text-accent font-medium">Perfil verificado</span>
+              </div>
+            )}
 
-            {/* Reputation block */}
-            <div className="flex items-center justify-center gap-6 mt-4 py-3 border-t border-border">
+            {/* Reputation */}
+            <div className="flex items-center justify-center gap-8 mt-4 py-4 border-t border-border">
               <div className="text-center">
-                <div className="flex items-center justify-center gap-1">
-                  <StarRating rating={user.rating} size="sm" />
-                </div>
-                <p className="text-lg font-heading font-bold mt-0.5">{user.rating}</p>
+                <StarRating rating={user.rating} size="sm" />
+                <p className="text-xl font-heading font-bold mt-1">{user.rating}</p>
                 <p className="text-[10px] text-muted-foreground">{user.totalRatings} calificaciones</p>
               </div>
-              <div className="w-px h-10 bg-border" />
+              <div className="w-px h-12 bg-border" />
               <div className="text-center">
                 <Car className="h-5 w-5 text-primary mx-auto" />
-                <p className="text-lg font-heading font-bold mt-0.5">{user.totalTrips}</p>
-                <p className="text-[10px] text-muted-foreground">viajes</p>
+                <p className="text-xl font-heading font-bold mt-1">{user.totalTrips}</p>
+                <p className="text-[10px] text-muted-foreground">viajes realizados</p>
               </div>
             </div>
           </div>
@@ -57,6 +59,7 @@ const Profile = () => {
 
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
           <div className="bg-card rounded-2xl p-4 border border-border space-y-3">
+            <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider">Datos personales</h3>
             <div className="flex items-center gap-3 text-sm">
               <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
               <span>{user.email}</span>
@@ -74,7 +77,7 @@ const Profile = () => {
 
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
           <div className="bg-card rounded-2xl p-4 border border-border">
-            <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">Reseñas recibidas</h3>
+            <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">Qué dicen de vos</h3>
             <div className="space-y-2">
               {mockReviews.map(r => (
                 <div key={r.id} className="bg-secondary/60 rounded-xl p-3">

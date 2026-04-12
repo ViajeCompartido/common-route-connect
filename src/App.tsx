@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import SearchPage from "./pages/SearchPage";
 import TripDetail from "./pages/TripDetail";
+import Chat from "./pages/Chat";
 import PublishTrip from "./pages/PublishTrip";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/trip/:id" element={<TripDetail />} />
+          <Route path="/chat/:tripId" element={<Chat />} />
           <Route path="/publish" element={<PublishTrip />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />

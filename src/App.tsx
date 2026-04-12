@@ -2,9 +2,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Welcome from "./pages/Welcome";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import GetStarted from "./pages/GetStarted";
 import ActivateDriver from "./pages/ActivateDriver";
 import Index from "./pages/Index";
@@ -28,26 +32,33 @@ const App = () => (
     <TooltipProvider>
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/welcome" element={<Welcome />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/get-started" element={<GetStarted />} />
-          <Route path="/activate-driver" element={<ActivateDriver />} />
-          <Route path="/" element={<Index />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/trip/:id" element={<TripDetail />} />
-          <Route path="/chat/:tripId" element={<Chat />} />
-          <Route path="/publish" element={<PublishTrip />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/need-ride" element={<NeedRide />} />
-          <Route path="/compatible-passengers" element={<CompatiblePassengers />} />
-          <Route path="/driver-requests" element={<DriverRequests />} />
-          <Route path="/my-trips" element={<MyTrips />} />
-          <Route path="/rate" element={<Rate />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/welcome" element={<Welcome />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Protected routes */}
+            <Route path="/get-started" element={<ProtectedRoute><GetStarted /></ProtectedRoute>} />
+            <Route path="/activate-driver" element={<ProtectedRoute><ActivateDriver /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+            <Route path="/trip/:id" element={<ProtectedRoute><TripDetail /></ProtectedRoute>} />
+            <Route path="/chat/:tripId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/publish" element={<ProtectedRoute><PublishTrip /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/need-ride" element={<ProtectedRoute><NeedRide /></ProtectedRoute>} />
+            <Route path="/compatible-passengers" element={<ProtectedRoute><CompatiblePassengers /></ProtectedRoute>} />
+            <Route path="/driver-requests" element={<ProtectedRoute><DriverRequests /></ProtectedRoute>} />
+            <Route path="/my-trips" element={<ProtectedRoute><MyTrips /></ProtectedRoute>} />
+            <Route path="/rate" element={<ProtectedRoute><Rate /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

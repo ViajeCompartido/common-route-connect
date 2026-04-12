@@ -25,6 +25,8 @@ export type Database = {
           meeting_point: string | null
           message: string | null
           passenger_id: string
+          pet_size: string | null
+          pet_surcharge: number | null
           price_per_seat: number
           seats: number
           status: Database["public"]["Enums"]["booking_status"]
@@ -41,6 +43,8 @@ export type Database = {
           meeting_point?: string | null
           message?: string | null
           passenger_id: string
+          pet_size?: string | null
+          pet_surcharge?: number | null
           price_per_seat: number
           seats?: number
           status?: Database["public"]["Enums"]["booking_status"]
@@ -57,6 +61,8 @@ export type Database = {
           meeting_point?: string | null
           message?: string | null
           passenger_id?: string
+          pet_size?: string | null
+          pet_surcharge?: number | null
           price_per_seat?: number
           seats?: number
           status?: Database["public"]["Enums"]["booking_status"]
@@ -81,6 +87,7 @@ export type Database = {
           license_url: string | null
           license_verified: boolean
           max_seats: number
+          pet_sizes_accepted: string[] | null
           plate: string
           updated_at: string
           user_id: string
@@ -93,6 +100,7 @@ export type Database = {
           license_url?: string | null
           license_verified?: boolean
           max_seats?: number
+          pet_sizes_accepted?: string[] | null
           plate: string
           updated_at?: string
           user_id: string
@@ -105,6 +113,7 @@ export type Database = {
           license_url?: string | null
           license_verified?: boolean
           max_seats?: number
+          pet_sizes_accepted?: string[] | null
           plate?: string
           updated_at?: string
           user_id?: string
@@ -196,6 +205,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pet_surcharges: {
+        Row: {
+          created_at: string
+          id: string
+          size: string
+          surcharge: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          size: string
+          surcharge?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          size?: string
+          surcharge?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -297,6 +327,7 @@ export type Database = {
           message: string | null
           origin: string
           passenger_id: string
+          pet_size: string | null
           seats: number
           status: string
           time: string
@@ -313,6 +344,7 @@ export type Database = {
           message?: string | null
           origin: string
           passenger_id: string
+          pet_size?: string | null
           seats?: number
           status?: string
           time: string
@@ -329,6 +361,7 @@ export type Database = {
           message?: string | null
           origin?: string
           passenger_id?: string
+          pet_size?: string | null
           seats?: number
           status?: string
           time?: string
@@ -351,6 +384,7 @@ export type Database = {
           meeting_point: string | null
           observations: string | null
           origin: string
+          pet_size: string | null
           price_per_seat: number
           status: Database["public"]["Enums"]["trip_status"]
           time: string
@@ -371,6 +405,7 @@ export type Database = {
           meeting_point?: string | null
           observations?: string | null
           origin: string
+          pet_size?: string | null
           price_per_seat: number
           status?: Database["public"]["Enums"]["trip_status"]
           time: string
@@ -391,6 +426,7 @@ export type Database = {
           meeting_point?: string | null
           observations?: string | null
           origin?: string
+          pet_size?: string | null
           price_per_seat?: number
           status?: Database["public"]["Enums"]["trip_status"]
           time?: string

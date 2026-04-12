@@ -48,7 +48,7 @@ const Welcome = () => {
               transition={{ delay: 0.4 + i * 0.1 }}
               className="flex items-center gap-1.5 bg-primary-foreground/15 backdrop-blur-sm rounded-full px-3.5 py-2 border border-primary-foreground/10"
             >
-              <feat.icon className="h-3.5 w-3.5 text-emerald-300" />
+              <feat.icon className="h-3.5 w-3.5 text-accent-foreground drop-shadow-sm" style={{ color: 'hsl(var(--ocean-bright))' }} />
               <span className="text-xs text-primary-foreground font-medium">{feat.label}</span>
             </motion.div>
           ))}

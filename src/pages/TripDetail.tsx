@@ -38,7 +38,7 @@ const TripDetail = () => {
             <ArrowLeft className="h-4 w-4" /> Volver
           </button>
           <h1 className="text-lg font-heading font-bold text-primary-foreground">Detalle del viaje</h1>
-          <p className="text-xs text-primary-foreground/60 mt-0.5">Revisá la info y pedí tu lugar.</p>
+          <p className="text-xs text-primary-foreground/60 mt-0.5">Revisá la info y reservá tu lugar.</p>
         </div>
       </div>
 
@@ -180,7 +180,7 @@ const TripDetail = () => {
                 <div>
                   <p className="text-xs font-semibold">¿Cómo funciona?</p>
                   <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
-                    1. Pedís tu lugar → 2. El chofer acepta → 3. Coordinan por chat (punto de encuentro, horario, mascota) → 4. Confirmás y pagás → 5. ¡Viaje confirmado!
+                    1. Reservás tu lugar → 2. El chofer te confirma → 3. Coordinan por chat (punto de encuentro, horario, mascota) → 4. Confirmás y pagás → 5. ¡Viaje confirmado!
                   </p>
                 </div>
               </div>

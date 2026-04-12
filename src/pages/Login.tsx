@@ -5,17 +5,28 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('¡Bienvenido de vuelta!');
-    navigate('/');
+    setIsLoading(true);
+    const { error } = await signIn(email, password);
+    setIsLoading(false);
+
+    if (error) {
+      toast.error('Email o contraseña incorrectos.');
+    } else {
+      toast.success('¡Bienvenido de vuelta!');
+      navigate('/');
+    }
   };
 
   return (
@@ -44,14 +55,7 @@ const Login = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="email"
-                placeholder="Tu email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="pl-10 h-12 rounded-xl"
-                required
-              />
+              <Input type="email" placeholder="Tu email" value={email} onChange={e => setEmail(e.target.value)} className="pl-10 h-12 rounded-xl" required />
             </div>
 
             <div className="relative">
@@ -70,21 +74,19 @@ const Login = () => {
             </div>
 
             <div className="text-right">
-              <button type="button" className="text-xs text-primary font-medium active:opacity-70">
+              <button type="button" onClick={() => navigate('/forgot-password')} className="text-xs text-primary font-medium active:opacity-70">
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
 
-            <Button type="submit" className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm">
-              Entrar
+            <Button type="submit" disabled={isLoading} className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm">
+              {isLoading ? 'Ingresando...' : 'Entrar'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             ¿No tenés cuenta?{' '}
-            <button onClick={() => navigate('/register')} className="text-primary font-semibold">
-              Crear cuenta
-            </button>
+            <button onClick={() => navigate('/register')} className="text-primary font-semibold">Crear cuenta</button>
           </p>
         </div>
       </motion.div>

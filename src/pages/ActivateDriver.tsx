@@ -6,9 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const ActivateDriver = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     vehicle: '',
     plate: '',
@@ -21,14 +25,50 @@ const ActivateDriver = () => {
     toast.success('Foto de licencia cargada');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.licenseUploaded) {
-      toast.error('Necesitás subir tu licencia de conducir para activar el perfil de chofer.');
+      toast.error('Necesitás subir tu licencia de conducir.');
       return;
     }
-    toast.success('¡Perfil de chofer activado! Ya podés publicar viajes.');
-    navigate('/publish');
+    if (!user) {
+      toast.error('Tenés que iniciar sesión primero.');
+      return;
+    }
+
+    setIsLoading(true);
+    // Create driver profile
+    const { error: driverError } = await supabase.from('driver_profiles').insert({
+      user_id: user.id,
+      vehicle: form.vehicle,
+      plate: form.plate,
+      max_seats: parseInt(form.maxSeats),
+    });
+
+    if (driverError) {
+      setIsLoading(false);
+      if (driverError.code === '23505') {
+        toast.error('Ya tenés un perfil de chofer activado.');
+      } else {
+        toast.error('Error al activar el perfil. Intentá de nuevo.');
+      }
+      return;
+    }
+
+    // Add driver role
+    const { error: roleError } = await supabase.from('user_roles').insert({
+      user_id: user.id,
+      role: 'driver' as const,
+    });
+
+    setIsLoading(false);
+
+    if (roleError && roleError.code !== '23505') {
+      toast.error('Perfil creado pero hubo un error al asignar el rol.');
+    } else {
+      toast.success('¡Perfil de chofer activado! Ya podés publicar viajes.');
+      navigate('/publish');
+    }
   };
 
   return (
@@ -46,11 +86,7 @@ const ActivateDriver = () => {
         </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md mx-auto px-4 -mt-2"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto px-4 -mt-2">
         <div className="bg-accent/10 rounded-2xl p-4 flex items-start gap-2.5 mb-4">
           <Info className="h-4 w-4 text-accent shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -64,48 +100,27 @@ const ActivateDriver = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <Car className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Vehículo (ej: VW Gol Trend 2018)"
-                value={form.vehicle}
-                onChange={e => setForm({ ...form, vehicle: e.target.value })}
-                className="pl-10 h-12 rounded-xl"
-                required
-              />
+              <Input placeholder="Vehículo (ej: VW Gol Trend 2018)" value={form.vehicle} onChange={e => setForm({ ...form, vehicle: e.target.value })} className="pl-10 h-12 rounded-xl" required />
             </div>
 
             <div className="relative">
               <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Patente (ej: AB 123 CD)"
-                value={form.plate}
-                onChange={e => setForm({ ...form, plate: e.target.value })}
-                className="pl-10 h-12 rounded-xl"
-                required
-              />
+              <Input placeholder="Patente (ej: AB 123 CD)" value={form.plate} onChange={e => setForm({ ...form, plate: e.target.value })} className="pl-10 h-12 rounded-xl" required />
             </div>
 
             <div>
               <Label className="text-[10px] text-muted-foreground mb-1 block">Asientos máximos del vehículo</Label>
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min="1"
-                  max="8"
-                  value={form.maxSeats}
-                  onChange={e => setForm({ ...form, maxSeats: e.target.value })}
-                  className="pl-10 h-12 rounded-xl"
-                  required
-                />
+                <Input type="number" min="1" max="8" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">En cada viaje vas a poder elegir cuántos lugares ofrecer.</p>
             </div>
 
-            {/* License upload */}
             <div className="border-t border-border pt-4">
               <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">Licencia de conducir</h3>
               <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
-                Subí una foto de tu licencia vigente. Es un requisito para poder publicar viajes como chofer.
+                Subí una foto de tu licencia vigente. Es un requisito para poder publicar viajes.
               </p>
 
               {form.licenseUploaded ? (
@@ -123,17 +138,13 @@ const ActivateDriver = () => {
               )}
             </div>
 
-            {/* Trust badge */}
             <div className="flex items-center gap-2 bg-secondary/60 rounded-xl p-3">
               <Shield className="h-4 w-4 text-primary shrink-0" />
-              <p className="text-[10px] text-muted-foreground">Tu información se verifica para garantizar la seguridad de todos los usuarios.</p>
+              <p className="text-[10px] text-muted-foreground">Tu información se verifica para garantizar la seguridad de todos.</p>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm gap-2"
-            >
-              <Car className="h-4 w-4" /> Activar perfil de chofer
+            <Button type="submit" disabled={isLoading} className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm gap-2">
+              <Car className="h-4 w-4" /> {isLoading ? 'Activando...' : 'Activar perfil de chofer'}
             </Button>
           </form>
         </div>

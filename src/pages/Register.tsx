@@ -5,18 +5,37 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '', password: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('¡Cuenta creada! Elegí cómo querés usar la app.');
-    navigate('/get-started');
+    if (form.password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    setIsLoading(true);
+    const { error } = await signUp(form.email, form.password, {
+      first_name: form.firstName,
+      last_name: form.lastName,
+      phone: form.phone,
+    });
+    setIsLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('¡Cuenta creada! Revisá tu email para confirmar.');
+      navigate('/get-started');
+    }
   };
 
   return (
@@ -46,47 +65,21 @@ const Register = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Nombre"
-                  value={form.firstName}
-                  onChange={e => setForm({ ...form, firstName: e.target.value })}
-                  className="pl-10 h-12 rounded-xl"
-                  required
-                />
+                <Input placeholder="Nombre" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} className="pl-10 h-12 rounded-xl" required />
               </div>
               <div>
-                <Input
-                  placeholder="Apellido"
-                  value={form.lastName}
-                  onChange={e => setForm({ ...form, lastName: e.target.value })}
-                  className="h-12 rounded-xl"
-                  required
-                />
+                <Input placeholder="Apellido" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} className="h-12 rounded-xl" required />
               </div>
             </div>
 
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="email"
-                placeholder="Tu email"
-                value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
-                className="pl-10 h-12 rounded-xl"
-                required
-              />
+              <Input type="email" placeholder="Tu email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="pl-10 h-12 rounded-xl" required />
             </div>
 
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="tel"
-                placeholder="Tu celular"
-                value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })}
-                className="pl-10 h-12 rounded-xl"
-                required
-              />
+              <Input type="tel" placeholder="Tu celular" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="pl-10 h-12 rounded-xl" required />
             </div>
 
             <div className="relative">
@@ -104,16 +97,14 @@ const Register = () => {
               </button>
             </div>
 
-            <Button type="submit" className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm">
-              Crear mi cuenta
+            <Button type="submit" disabled={isLoading} className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm">
+              {isLoading ? 'Creando cuenta...' : 'Crear mi cuenta'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             ¿Ya tenés cuenta?{' '}
-            <button onClick={() => navigate('/login')} className="text-primary font-semibold">
-              Iniciá sesión
-            </button>
+            <button onClick={() => navigate('/login')} className="text-primary font-semibold">Iniciá sesión</button>
           </p>
         </div>
       </motion.div>

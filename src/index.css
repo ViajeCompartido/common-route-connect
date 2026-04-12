@@ -18,11 +18,11 @@
     --primary: 174 55% 28%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 168 25% 92%;
-    --secondary-foreground: 170 50% 12%;
+    --secondary: 168 28% 90%;
+    --secondary-foreground: 172 50% 15%;
 
-    --muted: 165 18% 94%;
-    --muted-foreground: 170 12% 45%;
+    --muted: 165 18% 93%;
+    --muted-foreground: 170 18% 38%;
 
     --accent: 180 58% 38%;
     --accent-foreground: 0 0% 100%;
@@ -36,10 +36,10 @@
 
     --radius: 0.75rem;
 
-    --ocean-deep: 172 65% 10%;
-    --ocean-mid: 174 50% 22%;
-    --ocean-light: 176 48% 32%;
-    --ocean-bright: 180 55% 42%;
+    --ocean-deep: 172 65% 8%;
+    --ocean-mid: 174 55% 20%;
+    --ocean-light: 176 52% 30%;
+    --ocean-bright: 180 60% 44%;
 
     --sidebar-background: 172 65% 10%;
     --sidebar-foreground: 165 18% 92%;

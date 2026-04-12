@@ -13,12 +13,15 @@ import { toast } from 'sonner';
 
 const PublishTrip = () => {
   const navigate = useNavigate();
+  // In production, maxVehicleSeats comes from the driver's profile
+  const maxVehicleSeats = 4;
   const [form, setForm] = useState({
     origin: '', destination: '', date: '', time: '',
-    totalSeats: '4', pricePerSeat: '',
+    totalSeats: String(maxVehicleSeats), pricePerSeat: '',
     acceptsPets: false, hasPet: false, allowsLuggage: true,
     observations: '',
   });
+  const bookedSeats = 0; // In production, comes from confirmed bookings
 
   const priceNum = parseInt(form.pricePerSeat) || 0;
   // Simple route matching for demo

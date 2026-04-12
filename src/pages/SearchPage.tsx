@@ -36,29 +36,27 @@ const SearchPage = () => {
     setLoading(true);
     const { data: trips, error } = await supabase
       .from('trips')
-      .select('*, profiles!trips_driver_id_fkey(first_name, last_name, average_rating, total_trips, verified)')
+      .select('*')
       .in('status', ['active'])
       .gt('available_seats', 0)
       .order('date', { ascending: true });
 
-    if (error) {
+    if (error || !trips) {
       console.error('Error loading trips:', error);
-      // Fallback: load without join
-      const { data: fallbackTrips } = await supabase
-        .from('trips')
-        .select('*')
-        .in('status', ['active'])
-        .gt('available_seats', 0)
-        .order('date', { ascending: true });
-      
-      if (fallbackTrips) {
-        const mapped = fallbackTrips.map(t => mapTrip(t, null));
-        setResults(mapped.map(trip => ({ trip, match: defaultMatch(trip.id) })));
-      }
-    } else if (trips) {
-      const mapped = trips.map((t: any) => mapTrip(t, t.profiles));
-      setResults(mapped.map(trip => ({ trip, match: defaultMatch(trip.id) })));
+      setLoading(false);
+      return;
     }
+
+    // Fetch driver profiles for all trips
+    const driverIds = [...new Set(trips.map(t => t.driver_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, average_rating, total_trips, verified')
+      .in('id', driverIds);
+
+    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
+    const mapped = trips.map(t => mapTrip(t, profileMap.get(t.driver_id) ?? null));
+    setResults(mapped.map(trip => ({ trip, match: defaultMatch(trip.id) })));
     setLoading(false);
   };
 
@@ -101,27 +99,24 @@ const SearchPage = () => {
     // Fetch active trips from DB
     const { data: trips } = await supabase
       .from('trips')
-      .select('*, profiles!trips_driver_id_fkey(first_name, last_name, average_rating, total_trips, verified)')
+      .select('*')
       .in('status', ['active'])
       .gt('available_seats', 0);
 
     if (!trips) {
-      // Fallback without join
-      const { data: fallbackTrips } = await supabase
-        .from('trips')
-        .select('*')
-        .in('status', ['active'])
-        .gt('available_seats', 0);
-      
-      if (fallbackTrips) {
-        const mapped = fallbackTrips.map(t => mapTrip(t, null));
-        applyFilters(mapped, filters);
-      }
       setLoading(false);
       return;
     }
 
-    const mapped = trips.map((t: any) => mapTrip(t, t.profiles));
+    // Fetch driver profiles
+    const driverIds = [...new Set(trips.map(t => t.driver_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, average_rating, total_trips, verified')
+      .in('id', driverIds);
+
+    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
+    const mapped = trips.map(t => mapTrip(t, profileMap.get(t.driver_id) ?? null));
     applyFilters(mapped, filters);
     setLoading(false);
   };

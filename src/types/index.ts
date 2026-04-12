@@ -1,5 +1,15 @@
 export type UserRole = 'passenger' | 'driver' | 'admin';
 
+export type BadgeType =
+  | 'viajero_frecuente' | 'puntual' | 'pet_friendly' | 'recomendado'
+  | 'chofer_confiable' | 'verificado';
+
+export interface UserBadge {
+  type: BadgeType;
+  label: string;
+  icon: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -7,11 +17,27 @@ export interface User {
   phone: string;
   role: UserRole;
   avatar?: string;
+  city?: string;
   rating: number;
   totalRatings: number;
   totalTrips: number;
   verified: boolean;
   createdAt: string;
+  punctuality?: number;
+  cancellationRate?: number;
+  badges?: UserBadge[];
+  // Driver-specific
+  vehicle?: string;
+  plate?: string;
+  maxSeats?: number;
+  acceptsPets?: boolean;
+}
+
+export interface PriceRange {
+  routeKey: string;
+  suggested: number;
+  min: number;
+  max: number;
 }
 
 export interface Trip {
@@ -34,14 +60,48 @@ export interface Trip {
   acceptsPets: boolean;
   hasPet: boolean;
   allowsLuggage: boolean;
+  observations?: string;
   status: 'active' | 'full' | 'completed' | 'cancelled';
+}
+
+export interface RideRequest {
+  id: string;
+  passengerId: string;
+  passengerName: string;
+  passengerAvatar?: string;
+  passengerRating: number;
+  passengerTrips: number;
+  passengerVerified: boolean;
+  origin: string;
+  destination: string;
+  zone?: string;
+  date: string;
+  time: string;
+  seats: number;
+  hasPet: boolean;
+  hasLuggage: boolean;
+  message?: string;
+  status: 'active' | 'matched' | 'expired';
 }
 
 export interface Booking {
   id: string;
   tripId: string;
   passengerId: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'paid' | 'completed';
+  passengerName: string;
+  driverName: string;
+  origin: string;
+  destination: string;
+  date: string;
+  time: string;
+  seats: number;
+  pricePerSeat: number;
+  hasPet: boolean;
+  hasLuggage: boolean;
+  meetingPoint?: string;
+  message?: string;
+  status: 'pending' | 'accepted' | 'coordinating' | 'paid' | 'completed' | 'cancelled_passenger' | 'cancelled_driver' | 'rejected';
+  cancellationReason?: string;
   createdAt: string;
 }
 

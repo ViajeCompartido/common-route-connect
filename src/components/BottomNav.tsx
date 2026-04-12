@@ -1,6 +1,7 @@
 import { Home, Search, PlusCircle, User, LayoutDashboard } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const passengerNav = [
   { icon: Home, label: 'Inicio', path: '/' },
@@ -31,8 +32,8 @@ const BottomNav = ({ role = 'passenger' }: BottomNavProps) => {
   const navItems = role === 'admin' ? adminNav : role === 'driver' ? driverNav : passengerNav;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around py-2 px-4 max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border">
+      <div className="flex items-center justify-around py-1.5 px-2 max-w-lg mx-auto" style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -40,12 +41,19 @@ const BottomNav = ({ role = 'passenger' }: BottomNavProps) => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                "relative flex flex-col items-center gap-0.5 min-w-[64px] py-2 px-3 rounded-xl transition-colors",
+                isActive ? "text-primary" : "text-muted-foreground active:text-foreground"
               )}
             >
+              {isActive && (
+                <motion.div
+                  layoutId="nav-indicator"
+                  className="absolute -top-1.5 w-6 h-1 rounded-full gradient-accent"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
               <item.icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className={cn("text-[10px]", isActive ? "font-bold" : "font-medium")}>{item.label}</span>
             </button>
           );
         })}

@@ -1,4 +1,4 @@
-import { MapPin, Clock, Users, PawPrint, Luggage, Star, BadgeCheck, Car, ChevronRight } from 'lucide-react';
+import { MapPin, Clock, Users, PawPrint, Luggage, Star, BadgeCheck, Car, ChevronRight, Hand } from 'lucide-react';
 import { Trip } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,26 +8,27 @@ import { motion } from 'framer-motion';
 interface TripCardProps {
   trip: Trip;
   index?: number;
+  type?: 'driver' | 'passenger';
 }
 
-const TripCard = ({ trip, index = 0 }: TripCardProps) => {
+const TripCard = ({ trip, index = 0, type = 'driver' }: TripCardProps) => {
   const navigate = useNavigate();
+  const isPassengerRequest = type === 'passenger';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.07, duration: 0.35 }}
-    >
-      <div className="bg-card rounded-2xl border border-border overflow-hidden">
-        <button
-          className="w-full text-left p-4 active:bg-muted/30 transition-colors focus:outline-none"
-          onClick={() => navigate(`/trip/${trip.id}`)}
-        >
-          {/* Driver header */}
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.07, duration: 0.35 }}>
+      <div className={`bg-card rounded-2xl border overflow-hidden ${isPassengerRequest ? 'border-accent/30' : 'border-border'}`}>
+        {/* Type indicator */}
+        <div className={`px-4 py-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${isPassengerRequest ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'}`}>
+          {isPassengerRequest ? <Hand className="h-3 w-3" /> : <Car className="h-3 w-3" />}
+          {isPassengerRequest ? 'Pasajero busca viaje' : 'Chofer ofrece viaje'}
+        </div>
+
+        <button className="w-full text-left p-4 active:bg-muted/30 transition-colors focus:outline-none" onClick={() => isPassengerRequest ? null : navigate(`/trip/${trip.id}`)}>
+          {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground font-heading text-sm font-bold shrink-0">
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center font-heading text-sm font-bold shrink-0 ${isPassengerRequest ? 'bg-accent/20 text-accent' : 'gradient-ocean text-primary-foreground'}`}>
                 {trip.driverName.charAt(0)}
               </div>
               <div>
@@ -40,26 +41,24 @@ const TripCard = ({ trip, index = 0 }: TripCardProps) => {
                     <Star className="h-3 w-3 fill-accent text-accent" />
                     <span className="text-xs font-semibold">{trip.driverRating}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">·</span>
-                  <div className="flex items-center gap-0.5">
-                    <Car className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{trip.driverTotalTrips} viajes</span>
-                  </div>
+                  <span className="text-[10px] text-muted-foreground">· {trip.driverTotalTrips} viajes</span>
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-bold font-heading text-primary leading-tight">${trip.pricePerSeat.toLocaleString()}</p>
-              <p className="text-[10px] text-muted-foreground">por asiento</p>
-            </div>
+            {!isPassengerRequest && (
+              <div className="text-right">
+                <p className="text-lg font-bold font-heading text-primary leading-tight">${trip.pricePerSeat.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">por asiento</p>
+              </div>
+            )}
           </div>
 
           {/* Route */}
           <div className="flex items-start gap-3 mb-3 pl-1">
             <div className="flex flex-col items-center mt-1">
-              <div className="w-2.5 h-2.5 rounded-full bg-accent border-2 border-accent/30" />
-              <div className="w-0.5 h-7 bg-gradient-to-b from-accent/50 to-primary/50" />
-              <div className="w-2.5 h-2.5 rounded-full bg-primary border-2 border-primary/30" />
+              <div className={`w-2.5 h-2.5 rounded-full border-2 ${isPassengerRequest ? 'bg-accent border-accent/30' : 'bg-accent border-accent/30'}`} />
+              <div className={`w-0.5 h-7 ${isPassengerRequest ? 'bg-gradient-to-b from-accent/50 to-accent/20' : 'bg-gradient-to-b from-accent/50 to-primary/50'}`} />
+              <div className={`w-2.5 h-2.5 rounded-full border-2 ${isPassengerRequest ? 'bg-accent/60 border-accent/20' : 'bg-primary border-primary/30'}`} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{trip.origin}</p>
@@ -76,7 +75,10 @@ const TripCard = ({ trip, index = 0 }: TripCardProps) => {
             <div className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">
-                {trip.availableSeats} {trip.availableSeats === 1 ? 'lugar' : 'lugares'}
+                {isPassengerRequest
+                  ? `${trip.availableSeats} lugar${trip.availableSeats === 1 ? '' : 'es'}`
+                  : `${trip.availableSeats} ${trip.availableSeats === 1 ? 'lugar' : 'lugares'}`
+                }
               </span>
             </div>
           </div>
@@ -84,19 +86,13 @@ const TripCard = ({ trip, index = 0 }: TripCardProps) => {
           {/* Tags */}
           <div className="flex gap-1.5 flex-wrap">
             {trip.acceptsPets && (
-              <Badge variant="secondary" className="text-[10px] px-2 py-1 gap-1 rounded-full">
-                <PawPrint className="h-3 w-3" /> Acepta mascotas
-              </Badge>
+              <Badge variant="secondary" className="text-[10px] px-2 py-1 gap-1 rounded-full"><PawPrint className="h-3 w-3" /> Acepta mascotas</Badge>
             )}
             {trip.hasPet && (
-              <Badge variant="secondary" className="text-[10px] px-2 py-1 gap-1 rounded-full bg-accent/10 text-accent border-accent/20">
-                <PawPrint className="h-3 w-3" /> Viaja con mascota
-              </Badge>
+              <Badge variant="secondary" className="text-[10px] px-2 py-1 gap-1 rounded-full bg-accent/10 text-accent border-accent/20"><PawPrint className="h-3 w-3" /> Viaja con mascota</Badge>
             )}
             {trip.allowsLuggage && (
-              <Badge variant="secondary" className="text-[10px] px-2 py-1 gap-1 rounded-full">
-                <Luggage className="h-3 w-3" /> Equipaje
-              </Badge>
+              <Badge variant="secondary" className="text-[10px] px-2 py-1 gap-1 rounded-full"><Luggage className="h-3 w-3" /> Equipaje</Badge>
             )}
           </div>
         </button>
@@ -104,10 +100,15 @@ const TripCard = ({ trip, index = 0 }: TripCardProps) => {
         {/* CTA footer */}
         <div className="px-4 pb-3 pt-0">
           <Button
-            onClick={() => navigate(`/trip/${trip.id}`)}
-            className="w-full h-11 gradient-accent text-primary-foreground rounded-xl text-sm font-semibold gap-1.5"
+            onClick={() => isPassengerRequest ? navigate('/compatible-passengers') : navigate(`/trip/${trip.id}`)}
+            className={`w-full h-11 rounded-xl text-sm font-semibold gap-1.5 ${isPassengerRequest ? 'bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30' : 'gradient-accent text-primary-foreground'}`}
+            variant={isPassengerRequest ? 'outline' : 'default'}
           >
-            Ver viaje y solicitar lugar <ChevronRight className="h-4 w-4" />
+            {isPassengerRequest ? (
+              <><Car className="h-4 w-4" /> Ofrecerme como chofer</>
+            ) : (
+              <>Reservá tu lugar <ChevronRight className="h-4 w-4" /></>
+            )}
           </Button>
         </div>
       </div>

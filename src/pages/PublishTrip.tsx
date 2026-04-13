@@ -110,8 +110,8 @@ const PublishTrip = () => {
     const totalSeats = parseInt(form.totalSeats);
     const { error } = await supabase.from('trips').insert({
       driver_id: user.id,
-      origin: form.origin,
-      destination: form.destination,
+      origin: normalizeLocation(form.origin),
+      destination: normalizeLocation(form.destination),
       date: form.date,
       time: form.time,
       total_seats: totalSeats,
@@ -173,13 +173,8 @@ const PublishTrip = () => {
           <div className="bg-card rounded-2xl p-5 border border-border">
             <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-4">Datos del viaje</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
-                <Input placeholder="Zona o barrio de salida" value={form.origin} onChange={e => setForm({ ...form, origin: e.target.value })} className="pl-10 h-12 rounded-xl" required />
-              </div>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                <Input placeholder="¿A dónde vas?" value={form.destination} onChange={e => setForm({ ...form, destination: e.target.value })} className="pl-10 h-12 rounded-xl" required />
+              <LocationInput value={form.origin} onChange={v => setForm({ ...form, origin: v })} placeholder="¿Desde dónde salís?" iconColor="text-accent" required />
+              <LocationInput value={form.destination} onChange={v => setForm({ ...form, destination: v })} placeholder="¿A dónde vas?" iconColor="text-primary" required />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

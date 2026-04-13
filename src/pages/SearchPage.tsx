@@ -16,9 +16,7 @@ interface ScoredTrip {
   type: 'driver' | 'passenger';
 }
 
-function isTripExpired(date: string, time: string): boolean {
-  try { return new Date(`${date}T${time}`).getTime() < Date.now(); } catch { return false; }
-}
+import { isTripExpired } from '@/lib/tripUtils';
 
 const compatibilityColor = (score: number) => {
   if (score >= 0.9) return 'bg-green-500/15 text-green-700 border-green-500/30';

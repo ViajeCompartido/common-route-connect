@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import LocationInput from '@/components/LocationInput';
 import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { isTripExpired } from '@/lib/tripUtils';
+import { normalizeLocation } from '@/lib/normalizeLocation';
+import { calculatePriceBreakdown } from '@/lib/tripUtils';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;
@@ -20,13 +30,20 @@ interface BookingRow {
 interface TripRow {
   id: string; origin: string; destination: string; date: string; time: string;
   available_seats: number; total_seats: number; price_per_seat: number; status: string;
-  accepts_pets: boolean; allows_luggage: boolean; created_at: string;
+  accepts_pets: boolean; allows_luggage: boolean; created_at: string; observations: string | null;
 }
 
 interface RideRequestRow {
   id: string; origin: string; destination: string; date: string; time: string;
-  seats: number; has_pet: boolean; has_luggage: boolean; status: string; created_at: string;
+  seats: number; has_pet: boolean; has_luggage: boolean; pet_size: string | null;
+  status: string; created_at: string; message: string | null;
 }
+
+const PET_SIZES = [
+  { value: 'small', label: 'Chica' },
+  { value: 'medium', label: 'Mediana' },
+  { value: 'large', label: 'Grande' },
+];
 
 const bookingStatusConfig: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: 'Pendiente', color: 'bg-amber-500/15 text-amber-700 border-amber-500/30', icon: Clock },
@@ -58,6 +75,12 @@ const MyTrips = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Edit dialogs
+  const [editingTrip, setEditingTrip] = useState<TripRow | null>(null);
+  const [editingRequest, setEditingRequest] = useState<RideRequestRow | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [editSaving, setEditSaving] = useState(false);
+
   useEffect(() => { if (user) loadData(); }, [user]);
 
   const loadData = async () => {
@@ -70,7 +93,6 @@ const MyTrips = () => {
       supabase.from('ride_requests').select('*').eq('passenger_id', user.id).order('created_at', { ascending: false }),
     ]);
 
-    // Enrich bookings
     const bookingData = bookingRes.data ?? [];
     if (bookingData.length > 0) {
       const tripIds = [...new Set(bookingData.map(b => b.trip_id))];
@@ -107,7 +129,6 @@ const MyTrips = () => {
     const { error } = await supabase.from('trips').update({ status: newStatus as any }).eq('id', tripId);
     if (error) { setActionLoading(null); toast.error('Error al actualizar.'); return; }
 
-    // When trip is completed, mark bookings as completed and payments as held
     if (newStatus === 'completed') {
       await supabase.from('bookings').update({ status: 'completed' as any }).eq('trip_id', tripId).in('status', ['paid', 'coordinating', 'accepted']);
       const { data: tripBookings } = await supabase.from('bookings').select('id').eq('trip_id', tripId);
@@ -132,12 +153,90 @@ const MyTrips = () => {
     setRideRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'cancelled' } : r));
   };
 
-  const activeBookings = bookings.filter(b => ['pending', 'accepted', 'coordinating', 'paid'].includes(b.status));
-  const pastBookings = bookings.filter(b => ['completed', 'cancelled_passenger', 'cancelled_driver', 'rejected'].includes(b.status));
-  const activeDriverTrips = driverTrips.filter(t => ['active', 'paused', 'full', 'in_progress'].includes(t.status));
-  const pastDriverTrips = driverTrips.filter(t => ['completed', 'cancelled'].includes(t.status));
-  const activeRequests = rideRequests.filter(r => r.status === 'active');
-  const pastRequests = rideRequests.filter(r => r.status !== 'active');
+  // --- Edit trip ---
+  const openEditTrip = (t: TripRow) => {
+    setEditingTrip(t);
+    setEditForm({
+      origin: t.origin, destination: t.destination, date: t.date, time: t.time,
+      available_seats: String(t.available_seats), price_per_seat: String(t.price_per_seat),
+      accepts_pets: t.accepts_pets, allows_luggage: t.allows_luggage, observations: t.observations || '',
+    });
+  };
+
+  const saveEditTrip = async () => {
+    if (!editingTrip) return;
+    setEditSaving(true);
+    const { error } = await supabase.from('trips').update({
+      origin: normalizeLocation(editForm.origin),
+      destination: normalizeLocation(editForm.destination),
+      date: editForm.date, time: editForm.time,
+      available_seats: parseInt(editForm.available_seats),
+      price_per_seat: parseInt(editForm.price_per_seat),
+      accepts_pets: editForm.accepts_pets,
+      allows_luggage: editForm.allows_luggage,
+      observations: editForm.observations || null,
+    }).eq('id', editingTrip.id);
+    setEditSaving(false);
+    if (error) { toast.error('Error al guardar.'); return; }
+    toast.success('Viaje actualizado.');
+    setEditingTrip(null);
+    loadData();
+  };
+
+  // --- Edit ride request ---
+  const openEditRequest = (r: RideRequestRow) => {
+    setEditingRequest(r);
+    setEditForm({
+      origin: r.origin, destination: r.destination, date: r.date, time: r.time,
+      seats: String(r.seats), has_pet: r.has_pet, pet_size: r.pet_size || '',
+      has_luggage: r.has_luggage, message: r.message || '',
+    });
+  };
+
+  const saveEditRequest = async () => {
+    if (!editingRequest) return;
+    setEditSaving(true);
+    const { error } = await supabase.from('ride_requests').update({
+      origin: normalizeLocation(editForm.origin),
+      destination: normalizeLocation(editForm.destination),
+      date: editForm.date, time: editForm.time,
+      seats: parseInt(editForm.seats),
+      has_pet: editForm.has_pet,
+      pet_size: editForm.has_pet ? editForm.pet_size : null,
+      has_luggage: editForm.has_luggage,
+      message: editForm.message || null,
+    }).eq('id', editingRequest.id);
+    setEditSaving(false);
+    if (error) { toast.error('Error al guardar.'); return; }
+    toast.success('Solicitud actualizada.');
+    setEditingRequest(null);
+    loadData();
+  };
+
+  // Check if trip has active bookings (for warning)
+  const hasActiveBookings = async (tripId: string): Promise<boolean> => {
+    const { count } = await supabase.from('bookings').select('id', { count: 'exact', head: true })
+      .eq('trip_id', tripId).in('status', ['pending', 'accepted', 'coordinating', 'paid']);
+    return (count ?? 0) > 0;
+  };
+
+  // --- Filtering with 30-min expiry ---
+  const isItemExpired = (date: string, time: string) => isTripExpired(date, time);
+
+  const activeBookings = bookings.filter(b =>
+    ['pending', 'accepted', 'coordinating', 'paid'].includes(b.status) && !isItemExpired(b.date, b.time)
+  );
+  const pastBookings = bookings.filter(b =>
+    ['completed', 'cancelled_passenger', 'cancelled_driver', 'rejected'].includes(b.status) || isItemExpired(b.date, b.time)
+  );
+  const activeDriverTrips = driverTrips.filter(t =>
+    ['active', 'paused', 'full', 'in_progress'].includes(t.status) && !isItemExpired(t.date, t.time)
+  );
+  const pastDriverTrips = driverTrips.filter(t =>
+    ['completed', 'cancelled'].includes(t.status) || isItemExpired(t.date, t.time)
+  );
+  const activeRequests = rideRequests.filter(r => r.status === 'active' && !isItemExpired(r.date, r.time));
+  const pastRequests = rideRequests.filter(r => r.status !== 'active' || isItemExpired(r.date, r.time));
 
   const totalActive = activeBookings.length + activeRequests.length;
 
@@ -163,18 +262,22 @@ const MyTrips = () => {
             </TabsList>
 
             <TabsContent value="active" className="space-y-3">
-              {/* Active ride requests */}
               {activeRequests.map((r, i) => (
                 <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                   <div className="bg-card rounded-2xl p-4 border border-accent/30">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Hand className="h-3.5 w-3.5 text-accent" />
-                      <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">Busco viaje</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <Hand className="h-3.5 w-3.5 text-accent" />
+                        <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">Busco viaje</span>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditRequest(r)}>
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
                     </div>
                     <p className="font-semibold text-sm font-heading">{r.origin} → {r.destination}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {r.date} · {r.time}hs</p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span><Users className="h-3 w-3 inline" /> {r.seats} lugar{r.seats > 1 ? 'es' : ''}</span>
+                      <span><Users className="h-3 w-3 inline" /> {r.seats} persona{r.seats > 1 ? 's' : ''}</span>
                       {r.has_pet && <span><PawPrint className="h-3 w-3 inline" /> Mascota</span>}
                       {r.has_luggage && <span><Luggage className="h-3 w-3 inline" /> Equipaje</span>}
                     </div>
@@ -186,12 +289,12 @@ const MyTrips = () => {
                 </motion.div>
               ))}
 
-              {/* Active bookings */}
               {activeBookings.length === 0 && activeRequests.length === 0 ? (
                 <div className="text-center py-12"><p className="text-muted-foreground text-sm">No tenés viajes activos.</p></div>
               ) : activeBookings.map((b, i) => {
                 const sc = bookingStatusConfig[b.status] ?? bookingStatusConfig.pending;
                 const StatusIcon = sc.icon;
+                const breakdown = calculatePriceBreakdown(Number(b.price_per_seat), b.seats, Number(b.pet_surcharge) || 0);
                 return (
                   <motion.div key={b.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i + activeRequests.length) * 0.04 }}>
                     <div className="bg-card rounded-2xl p-4 border border-border">
@@ -202,9 +305,14 @@ const MyTrips = () => {
                         </div>
                         <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${sc.color}`}><StatusIcon className="h-3 w-3" /> {sc.label}</Badge>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                         <span>Chofer: <span className="font-medium text-foreground">{b.driverName}</span></span>
-                        <span className="font-heading font-bold text-primary">${(Number(b.price_per_seat) * b.seats + (Number(b.pet_surcharge) || 0)).toLocaleString()}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-0.5 mb-3">
+                        <div className="flex justify-between"><span>{b.seats} asiento{b.seats > 1 ? 's' : ''} × ${Number(b.price_per_seat).toLocaleString()}</span><span>${breakdown.basePrice.toLocaleString()}</span></div>
+                        {breakdown.petSurcharge > 0 && <div className="flex justify-between"><span>Adicional mascota</span><span>+${breakdown.petSurcharge.toLocaleString()}</span></div>}
+                        <div className="flex justify-between"><span>Cargo de servicio</span><span>+${breakdown.serviceFee.toLocaleString()}</span></div>
+                        <div className="flex justify-between font-bold text-foreground border-t border-border pt-1 mt-1"><span>Total</span><span className="text-primary">${breakdown.totalForPassenger.toLocaleString()}</span></div>
                       </div>
                       <div className="flex gap-2">
                         {b.status === 'coordinating' && (
@@ -230,7 +338,6 @@ const MyTrips = () => {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-3">
-              {/* Past ride requests */}
               {pastRequests.map((r, i) => (
                 <div key={r.id} className="bg-card rounded-2xl p-4 border border-border opacity-70">
                   <div className="flex items-center gap-1.5 mb-1"><Hand className="h-3 w-3 text-muted-foreground" /><span className="text-[10px] text-muted-foreground uppercase">Busqué viaje</span></div>
@@ -238,7 +345,6 @@ const MyTrips = () => {
                   <p className="text-xs text-muted-foreground">{r.date} · {r.time}hs</p>
                 </div>
               ))}
-              {/* Past bookings */}
               {pastBookings.length === 0 && pastRequests.length === 0 ? (
                 <div className="text-center py-12"><p className="text-muted-foreground text-sm">No tenés viajes anteriores.</p></div>
               ) : pastBookings.map((b, i) => {
@@ -286,7 +392,14 @@ const MyTrips = () => {
                                 <p className="font-semibold text-sm font-heading">{t.origin} → {t.destination}</p>
                                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {t.date} · {t.time}hs</p>
                               </div>
-                              <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${ts.color}`}>{ts.label}</Badge>
+                              <div className="flex items-center gap-1.5">
+                                {['active', 'paused'].includes(t.status) && (
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditTrip(t)}>
+                                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </Button>
+                                )}
+                                <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${ts.color}`}>{ts.label}</Badge>
+                              </div>
                             </div>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
                               <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {t.available_seats}/{t.total_seats} lugares</span>
@@ -344,6 +457,118 @@ const MyTrips = () => {
           </Tabs>
         )}
       </div>
+
+      {/* Edit Trip Dialog */}
+      <Dialog open={!!editingTrip} onOpenChange={(open) => !open && setEditingTrip(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Editar viaje</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Salida</Label>
+              <LocationInput value={editForm.origin ?? ''} onChange={v => setEditForm((f: any) => ({ ...f, origin: v }))} placeholder="Desde" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Destino</Label>
+              <LocationInput value={editForm.destination ?? ''} onChange={v => setEditForm((f: any) => ({ ...f, destination: v }))} placeholder="Hasta" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Fecha</Label>
+                <Input type="date" value={editForm.date ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, date: e.target.value }))} className="h-10 rounded-xl" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Hora</Label>
+                <Input type="time" value={editForm.time ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, time: e.target.value }))} className="h-10 rounded-xl" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Lugares disponibles</Label>
+                <Input type="number" min={0} value={editForm.available_seats ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, available_seats: e.target.value }))} className="h-10 rounded-xl" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Precio por asiento</Label>
+                <Input type="number" value={editForm.price_per_seat ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, price_per_seat: e.target.value }))} className="h-10 rounded-xl" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Acepta mascotas</Label>
+              <Switch checked={editForm.accepts_pets ?? false} onCheckedChange={v => setEditForm((f: any) => ({ ...f, accepts_pets: v }))} />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Permite equipaje</Label>
+              <Switch checked={editForm.allows_luggage ?? false} onCheckedChange={v => setEditForm((f: any) => ({ ...f, allows_luggage: v }))} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Observaciones</Label>
+              <Textarea value={editForm.observations ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, observations: e.target.value }))} className="rounded-xl resize-none" rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingTrip(null)}>Cancelar</Button>
+            <Button onClick={saveEditTrip} disabled={editSaving} className="gradient-accent text-primary-foreground">{editSaving ? 'Guardando...' : 'Guardar cambios'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Request Dialog */}
+      <Dialog open={!!editingRequest} onOpenChange={(open) => !open && setEditingRequest(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Editar solicitud de viaje</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Salida</Label>
+              <LocationInput value={editForm.origin ?? ''} onChange={v => setEditForm((f: any) => ({ ...f, origin: v }))} placeholder="Desde" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Destino</Label>
+              <LocationInput value={editForm.destination ?? ''} onChange={v => setEditForm((f: any) => ({ ...f, destination: v }))} placeholder="Hasta" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Fecha</Label>
+                <Input type="date" value={editForm.date ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, date: e.target.value }))} className="h-10 rounded-xl" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Hora</Label>
+                <Input type="time" value={editForm.time ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, time: e.target.value }))} className="h-10 rounded-xl" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">¿Cuántas personas viajan?</Label>
+              <Input type="number" min={1} max={6} value={editForm.seats ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, seats: e.target.value }))} className="h-10 rounded-xl" />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm flex items-center gap-1.5"><PawPrint className="h-4 w-4 text-accent" /> Viajo con mascota</Label>
+              <Switch checked={editForm.has_pet ?? false} onCheckedChange={v => setEditForm((f: any) => ({ ...f, has_pet: v, pet_size: v ? f.pet_size : '' }))} />
+            </div>
+            {editForm.has_pet && (
+              <Select value={editForm.pet_size ?? ''} onValueChange={v => setEditForm((f: any) => ({ ...f, pet_size: v }))}>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Tamaño de mascota" /></SelectTrigger>
+                <SelectContent>
+                  {PET_SIZES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            <div className="flex items-center justify-between">
+              <Label className="text-sm flex items-center gap-1.5"><Luggage className="h-4 w-4" /> Equipaje grande</Label>
+              <Switch checked={editForm.has_luggage ?? false} onCheckedChange={v => setEditForm((f: any) => ({ ...f, has_luggage: v }))} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Mensaje (opcional)</Label>
+              <Textarea value={editForm.message ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, message: e.target.value }))} className="rounded-xl resize-none" rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingRequest(null)}>Cancelar</Button>
+            <Button onClick={saveEditRequest} disabled={editSaving} className="gradient-accent text-primary-foreground">{editSaving ? 'Guardando...' : 'Guardar cambios'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav role="passenger" />
     </div>

@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { calculatePriceBreakdown } from '@/lib/tripUtils';
 
 type BookingStep = 'none' | 'pending' | 'accepted' | 'coordinating' | 'confirmed' | 'paid';
 
@@ -62,7 +63,6 @@ const TripDetail = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Booking form state
   const [reqSeats, setReqSeats] = useState(1);
   const [reqHasPet, setReqHasPet] = useState(false);
   const [reqPetSize, setReqPetSize] = useState('');
@@ -107,8 +107,8 @@ const TripDetail = () => {
   const petSurcharge = reqHasPet && reqPetSize
     ? petSurcharges.find(p => p.size === reqPetSize)?.surcharge ?? 0
     : 0;
-  const basePrice = trip ? Number(trip.price_per_seat) * reqSeats : 0;
-  const totalPrice = basePrice + petSurcharge;
+
+  const breakdown = trip ? calculatePriceBreakdown(Number(trip.price_per_seat), reqSeats, petSurcharge) : null;
 
   const handleRequestSeat = async () => {
     if (!user || !trip) return;
@@ -291,12 +291,12 @@ const TripDetail = () => {
                 })}
               </div>
 
-              {/* Request form - only show when no booking yet */}
+              {/* Request form */}
               {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
                 <div className="space-y-3 mb-4">
                   <div className="bg-secondary/60 rounded-xl p-3 space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs">Lugares</Label>
+                      <Label className="text-xs">¿Cuántas personas viajan?</Label>
                       <Select value={String(reqSeats)} onValueChange={v => setReqSeats(parseInt(v))}>
                         <SelectTrigger className="w-20 h-8 rounded-lg text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -332,23 +332,30 @@ const TripDetail = () => {
                     )}
                   </div>
 
-                  {/* Price breakdown */}
-                  <div className="bg-primary/5 rounded-xl p-3 space-y-1">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{reqSeats} asiento{reqSeats > 1 ? 's' : ''} × ${Number(trip.price_per_seat).toLocaleString()}</span>
-                      <span>${basePrice.toLocaleString()}</span>
-                    </div>
-                    {petSurcharge > 0 && (
+                  {/* Price breakdown with commission */}
+                  {breakdown && (
+                    <div className="bg-primary/5 rounded-xl p-3 space-y-1">
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Adicional mascota ({PET_SIZE_LABELS[reqPetSize]})</span>
-                        <span>+${petSurcharge.toLocaleString()}</span>
+                        <span>{reqSeats} asiento{reqSeats > 1 ? 's' : ''} × ${Number(trip.price_per_seat).toLocaleString()}</span>
+                        <span>${breakdown.basePrice.toLocaleString()}</span>
                       </div>
-                    )}
-                    <div className="flex justify-between text-sm font-bold border-t border-border pt-1 mt-1">
-                      <span>Total estimado</span>
-                      <span className="text-primary">${totalPrice.toLocaleString()}</span>
+                      {breakdown.petSurcharge > 0 && (
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Adicional mascota ({PET_SIZE_LABELS[reqPetSize]})</span>
+                          <span>+${breakdown.petSurcharge.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Cargo de servicio</span>
+                        <span>+${breakdown.serviceFee.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-bold border-t border-border pt-1 mt-1">
+                        <span>Total a pagar</span>
+                        <span className="text-primary">${breakdown.totalForPassenger.toLocaleString()}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">El chofer recibe ${breakdown.driverReceives.toLocaleString()}</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 

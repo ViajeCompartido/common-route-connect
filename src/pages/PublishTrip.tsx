@@ -175,7 +175,6 @@ const PublishTrip = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <LocationInput value={form.origin} onChange={v => setForm({ ...form, origin: v })} placeholder="¿Desde dónde salís?" iconColor="text-accent" required />
               <LocationInput value={form.destination} onChange={v => setForm({ ...form, destination: v })} placeholder="¿A dónde vas?" iconColor="text-primary" required />
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-[10px] text-muted-foreground mb-1 block">Fecha</Label>

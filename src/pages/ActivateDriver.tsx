@@ -1,13 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Car, CreditCard, Users, Camera, Shield, CheckCircle2, Info } from 'lucide-react';
+import { ArrowLeft, Car, CreditCard, Users, Camera, Shield, CheckCircle2, Info, PawPrint } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+
+const PET_SIZES = [
+  { value: 'small', label: 'Chica' },
+  { value: 'medium', label: 'Mediana' },
+  { value: 'large', label: 'Grande' },
+];
 
 const ActivateDriver = () => {
   const navigate = useNavigate();
@@ -18,6 +26,8 @@ const ActivateDriver = () => {
     vehicle: '',
     plate: '',
     maxSeats: '4',
+    acceptsPets: false,
+    petSizesAccepted: [] as string[],
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,6 +36,15 @@ const ActivateDriver = () => {
       setLicenseFile(file);
       toast.success('Foto de licencia cargada');
     }
+  };
+
+  const togglePetSize = (size: string) => {
+    setForm(f => ({
+      ...f,
+      petSizesAccepted: f.petSizesAccepted.includes(size)
+        ? f.petSizesAccepted.filter(s => s !== size)
+        : [...f.petSizesAccepted, size],
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,10 +57,13 @@ const ActivateDriver = () => {
       toast.error('Tenés que iniciar sesión primero.');
       return;
     }
+    if (form.acceptsPets && form.petSizesAccepted.length === 0) {
+      toast.error('Seleccioná qué tamaños de mascota aceptás.');
+      return;
+    }
 
     setIsLoading(true);
 
-    // Upload license photo
     const fileExt = licenseFile.name.split('.').pop();
     const filePath = `${user.id}/license.${fileExt}`;
     const { error: uploadError } = await supabase.storage
@@ -55,12 +77,13 @@ const ActivateDriver = () => {
       return;
     }
 
-    // Create driver profile with license URL
     const { error: driverError } = await supabase.from('driver_profiles').insert({
       user_id: user.id,
       vehicle: form.vehicle,
       plate: form.plate.toUpperCase(),
       max_seats: parseInt(form.maxSeats),
+      accepts_pets: form.acceptsPets,
+      pet_sizes_accepted: form.petSizesAccepted,
       license_url: filePath,
     });
 
@@ -75,9 +98,7 @@ const ActivateDriver = () => {
       return;
     }
 
-    // Add driver role via secure function
     const { error: roleError } = await supabase.rpc('add_driver_role');
-
     setIsLoading(false);
 
     if (roleError) {
@@ -133,6 +154,30 @@ const ActivateDriver = () => {
                 <Input type="number" min="1" max="8" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">En cada viaje vas a poder elegir cuántos lugares ofrecer.</p>
+            </div>
+
+            <div className="border-t border-border pt-4 space-y-3">
+              <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider">Mascotas</h3>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="acceptsPets" className="flex items-center gap-2 text-sm">
+                  <PawPrint className="h-4 w-4 text-accent" /> Acepto mascotas
+                </Label>
+                <Switch id="acceptsPets" checked={form.acceptsPets} onCheckedChange={v => setForm({ ...form, acceptsPets: v, petSizesAccepted: v ? form.petSizesAccepted : [] })} />
+              </div>
+
+              {form.acceptsPets && (
+                <div className="ml-6 space-y-2">
+                  <Label className="text-[10px] text-muted-foreground block">¿Qué tamaños aceptás?</Label>
+                  <div className="flex gap-3">
+                    {PET_SIZES.map(s => (
+                      <label key={s.value} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                        <Checkbox checked={form.petSizesAccepted.includes(s.value)} onCheckedChange={() => togglePetSize(s.value)} />
+                        {s.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-border pt-4">

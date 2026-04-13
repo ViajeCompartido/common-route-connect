@@ -11,6 +11,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import GetStarted from "./pages/GetStarted";
 import ActivateDriver from "./pages/ActivateDriver";
+import EditProfile from "./pages/EditProfile";
 import Index from "./pages/Index";
 import SearchPage from "./pages/SearchPage";
 import TripDetail from "./pages/TripDetail";
@@ -44,6 +45,7 @@ const App = () => (
             {/* Protected routes */}
             <Route path="/get-started" element={<ProtectedRoute><GetStarted /></ProtectedRoute>} />
             <Route path="/activate-driver" element={<ProtectedRoute><ActivateDriver /></ProtectedRoute>} />
+            <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
             <Route path="/trip/:id" element={<ProtectedRoute><TripDetail /></ProtectedRoute>} />

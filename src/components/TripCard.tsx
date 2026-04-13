@@ -4,14 +4,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { getInitial } from '@/lib/avatarUtils';
 
 interface TripCardProps {
   trip: Trip;
   index?: number;
   type?: 'driver' | 'passenger';
+  viewerIsDriver?: boolean;
+  viewerUserId?: string;
 }
 
-const TripCard = ({ trip, index = 0, type = 'driver' }: TripCardProps) => {
+const TripCard = ({ trip, index = 0, type = 'driver', viewerIsDriver = false, viewerUserId }: TripCardProps) => {
   const navigate = useNavigate();
   const isPassengerRequest = type === 'passenger';
 
@@ -29,7 +32,7 @@ const TripCard = ({ trip, index = 0, type = 'driver' }: TripCardProps) => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className={`w-11 h-11 rounded-full flex items-center justify-center font-heading text-sm font-bold shrink-0 ${isPassengerRequest ? 'bg-accent/20 text-accent' : 'gradient-ocean text-primary-foreground'}`}>
-                {trip.driverName.charAt(0)}
+                {getInitial(trip.driverName)}
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
@@ -99,17 +102,33 @@ const TripCard = ({ trip, index = 0, type = 'driver' }: TripCardProps) => {
 
         {/* CTA footer */}
         <div className="px-4 pb-3 pt-0">
-          <Button
-            onClick={() => isPassengerRequest ? navigate('/compatible-passengers') : navigate(`/trip/${trip.id}`)}
-            className={`w-full h-11 rounded-xl text-sm font-semibold gap-1.5 ${isPassengerRequest ? 'bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30' : 'gradient-accent text-primary-foreground'}`}
-            variant={isPassengerRequest ? 'outline' : 'default'}
-          >
-            {isPassengerRequest ? (
-              <><Car className="h-4 w-4" /> Ofrecerme como chofer</>
+          {isPassengerRequest ? (
+            // Only show "Ofrecerme como chofer" if viewer is a driver and it's not their own post
+            viewerIsDriver && viewerUserId !== trip.driverId ? (
+              <Button
+                onClick={() => navigate('/compatible-passengers')}
+                className="w-full h-11 rounded-xl text-sm font-semibold gap-1.5 bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30"
+                variant="outline"
+              >
+                <Car className="h-4 w-4" /> Ofrecerme como chofer
+              </Button>
+            ) : viewerUserId === trip.driverId ? (
+              <p className="text-xs text-muted-foreground text-center py-2">Tu publicación</p>
             ) : (
-              <>Reservá tu lugar <ChevronRight className="h-4 w-4" /></>
-            )}
-          </Button>
+              <p className="text-xs text-muted-foreground text-center py-2">Solo choferes pueden ofrecerse</p>
+            )
+          ) : (
+            viewerUserId !== trip.driverId ? (
+              <Button
+                onClick={() => navigate(`/trip/${trip.id}`)}
+                className="w-full h-11 rounded-xl text-sm font-semibold gap-1.5 gradient-accent text-primary-foreground"
+              >
+                Reservá tu lugar <ChevronRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-2">Tu publicación</p>
+            )
+          )}
         </div>
       </div>
     </motion.div>

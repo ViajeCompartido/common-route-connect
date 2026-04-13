@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, Calendar, Settings, LogOut, BadgeCheck, Car, Shield, Clock, XCircle, PawPrint, MapPin, Edit, Plus } from 'lucide-react';
+import { getInitial } from '@/lib/avatarUtils';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
@@ -71,7 +72,11 @@ const Profile = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="bg-card rounded-2xl p-5 border border-border text-center">
             <div className="w-20 h-20 rounded-full gradient-ocean mx-auto flex items-center justify-center text-primary-foreground text-2xl font-heading font-bold -mt-14 border-4 border-card shadow-ocean">
-              {fullName ? fullName.charAt(0) : '?'}
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={fullName} className="w-full h-full object-cover rounded-full" />
+              ) : (
+                getInitial(profile?.first_name)
+              )}
             </div>
 
             {!isProfileComplete ? (
@@ -202,7 +207,7 @@ const Profile = () => {
                   <div key={r.id} className="bg-secondary/60 rounded-xl p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-6 h-6 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground text-[10px] font-bold shrink-0">
-                        {r.fromName.charAt(0)}
+                        {getInitial(r.fromName)}
                       </div>
                       <span className="text-xs font-medium flex-1">{r.fromName}</span>
                       <StarRating rating={r.rating} size="sm" />

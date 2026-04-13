@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { getInitial } from '@/lib/avatarUtils';
 import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, MessageCircle, BadgeCheck, Car, Send, CheckCircle2, CreditCard, XCircle, Info, Handshake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -246,7 +247,7 @@ const TripDetail = () => {
             <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">Sobre el chofer</h3>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-14 h-14 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground font-heading font-bold text-xl shrink-0">
-                {driverName.charAt(0)}
+                {getInitial(driver?.first_name)}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-1.5">

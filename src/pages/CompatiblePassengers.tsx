@@ -8,7 +8,9 @@ import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
+import { getInitial } from '@/lib/avatarUtils';
 
 interface RideRequestRow {
   id: string; passenger_id: string; origin: string; destination: string;
@@ -24,6 +26,7 @@ import { isTripExpired } from '@/lib/tripUtils';
 const CompatiblePassengers = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isDriver } = useProfile();
   const [requests, setRequests] = useState<RideRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,7 +78,7 @@ const CompatiblePassengers = () => {
                 <span className="text-[10px] font-semibold text-accent uppercase tracking-wider bg-accent/10 px-2 py-0.5 rounded-full">Pasajero busca viaje</span>
               </div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center text-accent font-heading font-bold shrink-0">{req.passengerName.charAt(0)}</div>
+                <div className="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center text-accent font-heading font-bold shrink-0">{getInitial(req.passengerName)}</div>
                 <div className="flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="font-semibold font-heading text-sm">{req.passengerName}</span>
@@ -103,9 +106,15 @@ const CompatiblePassengers = () => {
 
               {req.message && <p className="text-xs text-muted-foreground italic mb-3">"{req.message}"</p>}
 
-              <Button className="w-full h-11 rounded-xl gap-1.5 text-sm bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30" variant="outline" onClick={() => toast.info('Próximamente podrás invitar pasajeros a tu viaje.')}>
-                <Car className="h-4 w-4" /> Ofrecerme como chofer
-              </Button>
+              {isDriver && req.passenger_id !== user?.id ? (
+                <Button className="w-full h-11 rounded-xl gap-1.5 text-sm bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30" variant="outline" onClick={() => toast.info('Próximamente podrás invitar pasajeros a tu viaje.')}>
+                  <Car className="h-4 w-4" /> Ofrecerme como chofer
+                </Button>
+              ) : req.passenger_id === user?.id ? (
+                <p className="text-xs text-muted-foreground text-center py-2">Tu publicación</p>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-2">Solo choferes pueden ofrecerse</p>
+              )}
             </div>
           </motion.div>
         ))}

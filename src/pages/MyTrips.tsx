@@ -140,7 +140,7 @@ const MyTrips = () => {
 
   const handleTripAction = async (tripId: string, newStatus: string) => {
     setActionLoading(tripId);
-    const { error } = await supabase.from('trips').update({ status: newStatus }).eq('id', tripId);
+    const { error } = await supabase.from('trips').update({ status: newStatus as any }).eq('id', tripId);
     setActionLoading(null);
     if (error) { toast.error('Error al actualizar el viaje.'); return; }
     toast.success(newStatus === 'paused' ? 'Viaje pausado.' : newStatus === 'active' ? 'Viaje reactivado.' : 'Viaje cerrado.');

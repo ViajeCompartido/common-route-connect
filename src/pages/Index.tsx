@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 
 const Index = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { isDriver } = useProfile();
   const [trips, setTrips] = useState<Trip[]>([]);

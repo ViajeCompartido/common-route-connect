@@ -9,6 +9,8 @@ import { Trip } from '@/types';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 
 interface ScoredTrip {
   trip: Trip;
@@ -26,6 +28,8 @@ const compatibilityColor = (score: number) => {
 };
 
 const SearchPage = () => {
+  const { user } = useAuth();
+  const { isDriver } = useProfile();
   const navigate = useNavigate();
   const [driverResults, setDriverResults] = useState<ScoredTrip[]>([]);
   const [passengerResults, setPassengerResults] = useState<ScoredTrip[]>([]);
@@ -150,7 +154,7 @@ const SearchPage = () => {
               {match.timeMatch.label && <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{match.timeMatch.label}</span>}
             </div>
           )}
-          <TripCard trip={trip} index={i} type={type} />
+          <TripCard trip={trip} index={i} type={type} viewerIsDriver={isDriver} viewerUserId={user?.id} />
         </motion.div>
       ))}
       {results.length === 0 && (

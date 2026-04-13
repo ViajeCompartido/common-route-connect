@@ -81,7 +81,7 @@ const Chat = () => {
           </button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full gradient-accent flex items-center justify-center text-primary-foreground font-heading font-bold text-sm shrink-0">
-              {driverName.charAt(0)}
+              {driverName.charAt(0).toUpperCase()}
             </div>
             <div>
               <p className="text-sm font-heading font-bold text-primary-foreground">{driverName}</p>

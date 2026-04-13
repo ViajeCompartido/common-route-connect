@@ -487,8 +487,20 @@ export type Database = {
         | "cancelled_driver"
         | "rejected"
       message_phase: "pre_payment" | "post_payment"
-      payment_status: "pending" | "completed" | "refunded" | "failed"
-      trip_status: "active" | "paused" | "full" | "completed" | "cancelled"
+      payment_status:
+        | "pending"
+        | "completed"
+        | "refunded"
+        | "failed"
+        | "held"
+        | "released"
+      trip_status:
+        | "active"
+        | "paused"
+        | "full"
+        | "completed"
+        | "cancelled"
+        | "in_progress"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -628,8 +640,22 @@ export const Constants = {
         "rejected",
       ],
       message_phase: ["pre_payment", "post_payment"],
-      payment_status: ["pending", "completed", "refunded", "failed"],
-      trip_status: ["active", "paused", "full", "completed", "cancelled"],
+      payment_status: [
+        "pending",
+        "completed",
+        "refunded",
+        "failed",
+        "held",
+        "released",
+      ],
+      trip_status: [
+        "active",
+        "paused",
+        "full",
+        "completed",
+        "cancelled",
+        "in_progress",
+      ],
     },
   },
 } as const

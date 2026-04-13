@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Phone, MapPin, Lock, Car, PawPrint, Bell, CreditCard, LogOut, ChevronRight, Construction } from 'lucide-react';
+import { ArrowLeft, User, Phone, MapPin, Lock, Car, PawPrint, Bell, CreditCard, Wallet, LogOut, ChevronRight, Construction } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
@@ -61,7 +61,18 @@ const Settings = () => {
     {
       title: 'Pagos',
       items: [
-        { icon: CreditCard, label: 'Método de cobro', desc: 'Mercado Pago o cuenta bancaria', action: () => {}, disabled: true, badge: 'Próximamente' },
+        {
+          icon: CreditCard,
+          label: 'Mercado Pago para pagar',
+          desc: 'Vinculá tu cuenta para pagar viajes',
+          action: () => navigate('/link-mercadopago?type=payer'),
+        },
+        ...(isDriver ? [{
+          icon: Wallet,
+          label: 'Mercado Pago para cobrar',
+          desc: 'Vinculá tu cuenta para recibir cobros',
+          action: () => navigate('/link-mercadopago?type=collector'),
+        } as SettingsItem] : []),
       ],
     },
   ];

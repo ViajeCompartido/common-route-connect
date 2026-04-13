@@ -12,9 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Trip } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { isTripExpired } from '@/lib/tripUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 
 const Index = () => {
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isDriver } = useProfile();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [rideRequests, setRideRequests] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +124,7 @@ const Index = () => {
             ) : trips.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm py-8">No hay viajes publicados todavía.</p>
             ) : trips.map((trip, i) => (
-              <TripCard key={trip.id} trip={trip} index={i} type="driver" />
+              <TripCard key={trip.id} trip={trip} index={i} type="driver" viewerIsDriver={isDriver} viewerUserId={user?.id} />
             ))}
           </div>
         </div>
@@ -135,7 +138,7 @@ const Index = () => {
             <p className="text-xs text-muted-foreground mb-4">Personas buscando compartir tu ruta.</p>
             <div className="space-y-3">
               {rideRequests.map((req, i) => (
-                <TripCard key={req.id} trip={req} index={i} type="passenger" />
+                <TripCard key={req.id} trip={req} index={i} type="passenger" viewerIsDriver={isDriver} viewerUserId={user?.id} />
               ))}
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff, Car } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,12 +13,17 @@ const Register = () => {
   const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '', password: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptedTerms) {
+      toast.error('Tenés que aceptar los términos y condiciones para continuar.');
+      return;
+    }
     if (form.password.length < 6) {
       toast.error('La contraseña debe tener al menos 6 caracteres.');
       return;
@@ -52,11 +58,7 @@ const Register = () => {
         </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex-1 bg-background rounded-t-3xl px-4 pt-8 pb-10"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1 bg-background rounded-t-3xl px-4 pt-8 pb-10">
         <div className="max-w-md mx-auto">
           <h1 className="text-xl font-heading font-bold mb-1">Crear tu cuenta</h1>
           <p className="text-sm text-muted-foreground mb-6">Completá tus datos para empezar a viajar.</p>
@@ -95,6 +97,16 @@ const Register = () => {
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={v => setAcceptedTerms(v === true)} className="mt-1" />
+              <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                Acepto los{' '}
+                <button type="button" onClick={() => navigate('/terms')} className="text-primary font-semibold underline">términos y condiciones</button>
+                {' '}y la{' '}
+                <button type="button" onClick={() => navigate('/privacy')} className="text-primary font-semibold underline">política de privacidad</button>
+              </label>
             </div>
 
             <Button type="submit" disabled={isLoading} className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm">

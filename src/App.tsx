@@ -26,6 +26,10 @@ import DriverRequests from "./pages/DriverRequests";
 import MyTrips from "./pages/MyTrips";
 import Rate from "./pages/Rate";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsConditions from "./pages/TermsConditions";
+import FAQ from "./pages/FAQ";
+import Help from "./pages/Help";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +46,10 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsConditions />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/help" element={<Help />} />
 
             {/* Protected routes */}
             <Route path="/get-started" element={<ProtectedRoute><GetStarted /></ProtectedRoute>} />

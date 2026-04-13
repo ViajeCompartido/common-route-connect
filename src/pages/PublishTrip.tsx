@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Calendar, Clock, Users, DollarSign, PawPrint, Luggage, Car, Info, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import LocationInput from '@/components/LocationInput';
+import { normalizeLocation } from '@/lib/normalizeLocation';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';

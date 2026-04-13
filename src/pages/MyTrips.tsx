@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -43,6 +43,7 @@ const tripStatusConfig: Record<string, { label: string; color: string }> = {
   active: { label: 'Activo', color: 'bg-green-500/15 text-green-700 border-green-500/30' },
   paused: { label: 'Pausado', color: 'bg-amber-500/15 text-amber-700 border-amber-500/30' },
   full: { label: 'Lleno', color: 'bg-blue-500/15 text-blue-700 border-blue-500/30' },
+  in_progress: { label: 'En curso', color: 'bg-sky-500/15 text-sky-700 border-sky-500/30' },
   completed: { label: 'Finalizado', color: 'bg-muted text-muted-foreground border-border' },
   cancelled: { label: 'Cancelado', color: 'bg-destructive/15 text-destructive border-destructive/30' },
 };
@@ -106,7 +107,7 @@ const MyTrips = () => {
     const { error } = await supabase.from('trips').update({ status: newStatus as any }).eq('id', tripId);
     setActionLoading(null);
     if (error) { toast.error('Error al actualizar.'); return; }
-    const msgs: Record<string, string> = { paused: 'Viaje pausado.', active: 'Viaje reactivado.', full: 'Viaje marcado como lleno.', cancelled: 'Viaje cerrado.' };
+    const msgs: Record<string, string> = { paused: 'Viaje pausado.', active: 'Viaje reactivado.', full: 'Viaje marcado como lleno.', cancelled: 'Viaje cerrado.', in_progress: 'Viaje en curso.', completed: 'Viaje finalizado.' };
     toast.success(msgs[newStatus] || 'Actualizado.');
     setDriverTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: newStatus } : t));
   };
@@ -122,7 +123,7 @@ const MyTrips = () => {
 
   const activeBookings = bookings.filter(b => ['pending', 'accepted', 'coordinating', 'paid'].includes(b.status));
   const pastBookings = bookings.filter(b => ['completed', 'cancelled_passenger', 'cancelled_driver', 'rejected'].includes(b.status));
-  const activeDriverTrips = driverTrips.filter(t => ['active', 'paused', 'full'].includes(t.status));
+  const activeDriverTrips = driverTrips.filter(t => ['active', 'paused', 'full', 'in_progress'].includes(t.status));
   const pastDriverTrips = driverTrips.filter(t => ['completed', 'cancelled'].includes(t.status));
   const activeRequests = rideRequests.filter(r => r.status === 'active');
   const pastRequests = rideRequests.filter(r => r.status !== 'active');
@@ -293,6 +294,12 @@ const MyTrips = () => {
                               )}
                               {t.status === 'full' && (
                                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'active')}><Play className="h-3 w-3" /> Reabrir</Button>
+                              )}
+                              {['active', 'paused', 'full'].includes(t.status) && (
+                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'in_progress')}><Navigation className="h-3 w-3" /> En curso</Button>
+                              )}
+                              {t.status === 'in_progress' && (
+                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar viaje</Button>
                               )}
                               {['active', 'paused', 'full'].includes(t.status) && (
                                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'cancelled')}><Lock className="h-3 w-3" /> Cerrar</Button>

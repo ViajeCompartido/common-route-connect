@@ -3,15 +3,21 @@ import SearchForm, { SearchFilters } from '@/components/SearchForm';
 import TripCard from '@/components/TripCard';
 import BottomNav from '@/components/BottomNav';
 import { computeMatchScore, MatchResult } from '@/lib/fuzzyMatch';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles, Car, Hand } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Trip } from '@/types';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ScoredTrip {
   trip: Trip;
   match: MatchResult;
+  type: 'driver' | 'passenger';
+}
+
+function isTripExpired(date: string, time: string): boolean {
+  try { return new Date(`${date}T${time}`).getTime() < Date.now(); } catch { return false; }
 }
 
 const compatibilityColor = (score: number) => {
@@ -23,107 +29,87 @@ const compatibilityColor = (score: number) => {
 
 const SearchPage = () => {
   const navigate = useNavigate();
-  const [results, setResults] = useState<ScoredTrip[]>([]);
+  const [driverResults, setDriverResults] = useState<ScoredTrip[]>([]);
+  const [passengerResults, setPassengerResults] = useState<ScoredTrip[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load all active trips on mount
-  useEffect(() => {
-    loadTrips();
-  }, []);
-
-  const loadTrips = async () => {
-    setLoading(true);
-    const { data: trips, error } = await supabase
-      .from('trips')
-      .select('*')
-      .in('status', ['active'])
-      .gt('available_seats', 0)
-      .order('date', { ascending: true });
-
-    if (error || !trips) {
-      console.error('Error loading trips:', error);
-      setLoading(false);
-      return;
-    }
-
-    // Fetch driver profiles for all trips
-    const driverIds = [...new Set(trips.map(t => t.driver_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, average_rating, total_trips, verified')
-      .in('id', driverIds);
-
-    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
-    const mapped = trips.map(t => mapTrip(t, profileMap.get(t.driver_id) ?? null));
-    setResults(mapped.map(trip => ({ trip, match: defaultMatch(trip.id) })));
-    setLoading(false);
-  };
+  useEffect(() => { loadAll(); }, []);
 
   const mapTrip = (t: any, profile: any): Trip => ({
-    id: t.id,
-    driverId: t.driver_id,
-    driverName: profile ? `${profile.first_name} ${profile.last_name}`.trim() || 'Chofer' : 'Chofer',
-    driverRating: profile?.average_rating ?? 0,
-    driverTotalTrips: profile?.total_trips ?? 0,
-    driverVerified: profile?.verified ?? false,
-    origin: t.origin,
-    destination: t.destination,
-    zone: t.zone,
-    meetingPoint: t.meeting_point,
-    date: t.date,
-    time: t.time,
-    availableSeats: t.available_seats,
-    totalSeats: t.total_seats,
-    pricePerSeat: Number(t.price_per_seat),
-    acceptsPets: t.accepts_pets,
-    hasPet: t.has_pet,
-    allowsLuggage: t.allows_luggage,
-    observations: t.observations,
-    status: t.status,
+    id: t.id, driverId: t.driver_id, driverName: profile ? `${profile.first_name} ${profile.last_name}`.trim() || 'Chofer' : 'Chofer',
+    driverRating: profile?.average_rating ?? 0, driverTotalTrips: profile?.total_trips ?? 0, driverVerified: profile?.verified ?? false,
+    origin: t.origin, destination: t.destination, zone: t.zone, meetingPoint: t.meeting_point,
+    date: t.date, time: t.time, availableSeats: t.available_seats, totalSeats: t.total_seats,
+    pricePerSeat: Number(t.price_per_seat), acceptsPets: t.accepts_pets, hasPet: t.has_pet,
+    allowsLuggage: t.allows_luggage, observations: t.observations, status: t.status,
+  });
+
+  const mapRideRequest = (r: any, profile: any): Trip => ({
+    id: r.id, driverId: r.passenger_id,
+    driverName: profile ? `${profile.first_name} ${profile.last_name}`.trim() || 'Pasajero' : 'Pasajero',
+    driverRating: profile?.average_rating ?? 0, driverTotalTrips: profile?.total_trips ?? 0, driverVerified: profile?.verified ?? false,
+    origin: r.origin, destination: r.destination, date: r.date, time: r.time,
+    availableSeats: r.seats, totalSeats: r.seats, pricePerSeat: 0,
+    acceptsPets: r.has_pet, hasPet: r.has_pet, allowsLuggage: r.has_luggage, status: 'active' as const,
   });
 
   const defaultMatch = (id: string): MatchResult => ({
     tripId: id, overallScore: 1,
-    originMatch: { match: true, score: 1, label: '' },
-    destinationMatch: { match: true, score: 1, label: '' },
-    timeMatch: { match: true, diffMinutes: 0, label: '' },
-    dateMatch: { match: true, label: '' },
-    compatibilityLabel: '',
+    originMatch: { match: true, score: 1, label: '' }, destinationMatch: { match: true, score: 1, label: '' },
+    timeMatch: { match: true, diffMinutes: 0, label: '' }, dateMatch: { match: true, label: '' }, compatibilityLabel: '',
   });
+
+  const loadAll = async () => {
+    setLoading(true);
+    const [tripsRes, reqsRes] = await Promise.all([
+      supabase.from('trips').select('*').in('status', ['active']).gt('available_seats', 0).order('date', { ascending: true }),
+      supabase.from('ride_requests').select('*').eq('status', 'active').order('created_at', { ascending: false }),
+    ]);
+
+    const trips = (tripsRes.data ?? []).filter(t => !isTripExpired(t.date, t.time));
+    const reqs = (reqsRes.data ?? []).filter(r => !isTripExpired(r.date, r.time));
+
+    const driverIds = [...new Set(trips.map(t => t.driver_id))];
+    const passengerIds = [...new Set(reqs.map(r => r.passenger_id))];
+    const allIds = [...new Set([...driverIds, ...passengerIds])];
+
+    const { data: profiles } = allIds.length > 0
+      ? await supabase.from('profiles').select('id, first_name, last_name, average_rating, total_trips, verified').in('id', allIds)
+      : { data: [] };
+    const pm = new Map((profiles ?? []).map(p => [p.id, p]));
+
+    const mappedTrips = trips.map(t => mapTrip(t, pm.get(t.driver_id)));
+    const mappedReqs = reqs.map(r => mapRideRequest(r, pm.get(r.passenger_id)));
+
+    setDriverResults(mappedTrips.map(trip => ({ trip, match: defaultMatch(trip.id), type: 'driver' as const })));
+    setPassengerResults(mappedReqs.map(trip => ({ trip, match: defaultMatch(trip.id), type: 'passenger' as const })));
+    setLoading(false);
+  };
 
   const handleSearch = async (filters: SearchFilters) => {
     setHasSearched(true);
     setLoading(true);
 
-    // Fetch active trips from DB
-    const { data: trips } = await supabase
-      .from('trips')
-      .select('*')
-      .in('status', ['active'])
-      .gt('available_seats', 0);
+    const [tripsRes, reqsRes] = await Promise.all([
+      supabase.from('trips').select('*').in('status', ['active']).gt('available_seats', 0),
+      supabase.from('ride_requests').select('*').eq('status', 'active'),
+    ]);
 
-    if (!trips) {
-      setLoading(false);
-      return;
-    }
+    const trips = (tripsRes.data ?? []).filter(t => !isTripExpired(t.date, t.time));
+    const reqs = (reqsRes.data ?? []).filter(r => !isTripExpired(r.date, r.time));
 
-    // Fetch driver profiles
-    const driverIds = [...new Set(trips.map(t => t.driver_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, average_rating, total_trips, verified')
-      .in('id', driverIds);
+    const allIds = [...new Set([...trips.map(t => t.driver_id), ...reqs.map(r => r.passenger_id)])];
+    const { data: profiles } = allIds.length > 0
+      ? await supabase.from('profiles').select('id, first_name, last_name, average_rating, total_trips, verified').in('id', allIds)
+      : { data: [] };
+    const pm = new Map((profiles ?? []).map(p => [p.id, p]));
 
-    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
-    const mapped = trips.map(t => mapTrip(t, profileMap.get(t.driver_id) ?? null));
-    applyFilters(mapped, filters);
-    setLoading(false);
-  };
+    const mappedTrips = trips.map(t => mapTrip(t, pm.get(t.driver_id)));
+    const mappedReqs = reqs.map(r => mapRideRequest(r, pm.get(r.passenger_id)));
 
-  const applyFilters = (trips: Trip[], filters: SearchFilters) => {
-    // Hard filters
-    let filtered = trips.filter(t => {
+    // Apply hard filters to trips
+    const filteredTrips = mappedTrips.filter(t => {
       if (filters.acceptsPets && !t.acceptsPets) return false;
       if (filters.driverHasPet && !t.hasPet) return false;
       if (filters.allowsLuggage && !t.allowsLuggage) return false;
@@ -132,10 +118,10 @@ const SearchPage = () => {
       return true;
     });
 
-    // Fuzzy match scores
-    const scored: ScoredTrip[] = filtered
-      .map(trip => ({
-        trip,
+    // Score both
+    const scoreAndFilter = (items: Trip[], type: 'driver' | 'passenger'): ScoredTrip[] =>
+      items.map(trip => ({
+        trip, type,
         match: computeMatchScore(
           { origin: filters.origin, destination: filters.destination, date: filters.date, time: filters.time },
           trip
@@ -148,8 +134,35 @@ const SearchPage = () => {
       })
       .sort((a, b) => b.match.overallScore - a.match.overallScore);
 
-    setResults(scored);
+    setDriverResults(scoreAndFilter(filteredTrips, 'driver'));
+    setPassengerResults(scoreAndFilter(mappedReqs, 'passenger'));
+    setLoading(false);
   };
+
+  const renderResults = (results: ScoredTrip[]) => (
+    <div className="space-y-3">
+      {results.map(({ trip, match, type }, i) => (
+        <motion.div key={trip.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+          {hasSearched && match.compatibilityLabel && (
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${compatibilityColor(match.overallScore)}`}>
+                <Sparkles className="h-3 w-3" /> {match.compatibilityLabel}
+              </span>
+              {match.originMatch.label && <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Origen: {match.originMatch.label}</span>}
+              {match.timeMatch.label && <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{match.timeMatch.label}</span>}
+            </div>
+          )}
+          <TripCard trip={trip} index={i} type={type} />
+        </motion.div>
+      ))}
+      {results.length === 0 && (
+        <div className="text-center py-16">
+          <p className="text-muted-foreground text-sm">No encontramos resultados compatibles.</p>
+          <p className="text-muted-foreground/60 text-xs mt-1">Probá ampliando la zona o cambiando el horario.</p>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen pb-20">
@@ -158,8 +171,8 @@ const SearchPage = () => {
           <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70">
             <ArrowLeft className="h-4 w-4" /> Volver
           </button>
-          <h1 className="text-lg font-heading font-bold text-primary-foreground mb-1">Buscar viajes</h1>
-          <p className="text-xs text-primary-foreground/60 mb-4">Buscamos viajes compatibles con tu zona y horario</p>
+          <h1 className="text-lg font-heading font-bold text-primary-foreground mb-1">Buscar</h1>
+          <p className="text-xs text-primary-foreground/60 mb-4">Buscá viajes y pasajeros compatibles con tu ruta</p>
           <div className="bg-card rounded-2xl p-5 shadow-ocean">
             <SearchForm onSearch={handleSearch} />
           </div>
@@ -168,56 +181,16 @@ const SearchPage = () => {
 
       <div className="max-w-lg mx-auto px-4 py-6">
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-sm">Buscando viajes...</p>
-          </div>
+          <div className="text-center py-12"><p className="text-muted-foreground text-sm">Buscando...</p></div>
         ) : (
-          <>
-            <p className="text-sm text-muted-foreground mb-4">
-              {results.length} viaje{results.length !== 1 ? 's' : ''} {hasSearched ? 'compatible' : 'disponible'}{results.length !== 1 ? 's' : ''}
-            </p>
-            <div className="space-y-3">
-              {results.map(({ trip, match }, i) => (
-                <motion.div
-                  key={trip.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  {hasSearched && match.compatibilityLabel && (
-                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${compatibilityColor(match.overallScore)}`}>
-                        <Sparkles className="h-3 w-3" />
-                        {match.compatibilityLabel}
-                      </span>
-                      {match.originMatch.label && (
-                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          Origen: {match.originMatch.label}
-                        </span>
-                      )}
-                      {match.timeMatch.label && (
-                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {match.timeMatch.label}
-                        </span>
-                      )}
-                      {match.dateMatch.label && (
-                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {match.dateMatch.label}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  <TripCard trip={trip} index={i} />
-                </motion.div>
-              ))}
-              {results.length === 0 && (
-                <div className="text-center py-16">
-                  <p className="text-muted-foreground text-sm">No encontramos viajes compatibles.</p>
-                  <p className="text-muted-foreground/60 text-xs mt-1">Probá ampliando la zona o cambiando el horario.</p>
-                </div>
-              )}
-            </div>
-          </>
+          <Tabs defaultValue="drivers">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="drivers" className="gap-1.5"><Car className="h-3.5 w-3.5" /> Choferes ({driverResults.length})</TabsTrigger>
+              <TabsTrigger value="passengers" className="gap-1.5"><Hand className="h-3.5 w-3.5" /> Pasajeros ({passengerResults.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="drivers">{renderResults(driverResults)}</TabsContent>
+            <TabsContent value="passengers">{renderResults(passengerResults)}</TabsContent>
+          </Tabs>
         )}
       </div>
 

@@ -1,14 +1,91 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, BadgeCheck, Star, Sparkles, Car } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, BadgeCheck, Sparkles, Car } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
-import { mockRideRequests } from '@/data/mockData';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+
+interface RideRequestRow {
+  id: string;
+  passenger_id: string;
+  origin: string;
+  destination: string;
+  date: string;
+  time: string;
+  seats: number;
+  has_pet: boolean;
+  pet_size: string | null;
+  has_luggage: boolean;
+  message: string | null;
+  status: string;
+  // enriched
+  passengerName: string;
+  passengerRating: number;
+  passengerTrips: number;
+  passengerVerified: boolean;
+}
+
+const PET_SIZE_LABELS: Record<string, string> = { small: 'Chica', medium: 'Mediana', large: 'Grande' };
 
 const CompatiblePassengers = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [requests, setRequests] = useState<RideRequestRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadRequests();
+  }, []);
+
+  const loadRequests = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('ride_requests')
+      .select('*')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      setLoading(false);
+      return;
+    }
+
+    // Filter out own requests
+    const filtered = data.filter(r => r.passenger_id !== user?.id);
+
+    if (filtered.length === 0) {
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
+
+    const passengerIds = [...new Set(filtered.map(r => r.passenger_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, average_rating, total_trips, verified')
+      .in('id', passengerIds);
+
+    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
+
+    const enriched: RideRequestRow[] = filtered.map(r => {
+      const p = profileMap.get(r.passenger_id);
+      return {
+        ...r,
+        passengerName: p ? `${p.first_name} ${p.last_name}`.trim() || 'Pasajero' : 'Pasajero',
+        passengerRating: p?.average_rating ?? 0,
+        passengerTrips: p?.total_trips ?? 0,
+        passengerVerified: p?.verified ?? false,
+      };
+    });
+
+    setRequests(enriched);
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen pb-20">
@@ -17,8 +94,8 @@ const CompatiblePassengers = () => {
           <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70">
             <ArrowLeft className="h-4 w-4" /> Volver
           </button>
-          <h1 className="text-lg font-heading font-bold text-primary-foreground">Pasajeros compatibles</h1>
-          <p className="text-sm text-primary-foreground/70">Personas que buscan viajar en rutas y horarios parecidos a los tuyos.</p>
+          <h1 className="text-lg font-heading font-bold text-primary-foreground">Pasajeros que buscan viaje</h1>
+          <p className="text-sm text-primary-foreground/70">Personas que publicaron su necesidad de traslado.</p>
         </div>
       </div>
 
@@ -26,11 +103,17 @@ const CompatiblePassengers = () => {
         <div className="bg-accent/10 rounded-2xl p-3 flex items-start gap-2 mb-1">
           <Sparkles className="h-4 w-4 text-accent shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground">
-            Estos pasajeros coinciden con tus viajes publicados en zona, destino y horario aproximado.
+            Revisá las publicaciones de pasajeros y ofrecete si tu ruta y horario son compatibles.
           </p>
         </div>
 
-        {mockRideRequests.map((req, i) => (
+        {loading ? (
+          <div className="text-center py-12"><p className="text-muted-foreground text-sm">Cargando...</p></div>
+        ) : requests.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-sm">No hay pasajeros buscando viaje en este momento.</p>
+          </div>
+        ) : requests.map((req, i) => (
           <motion.div key={req.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <div className="bg-card rounded-2xl p-5 border border-border">
               <div className="flex items-center gap-3 mb-3">
@@ -60,12 +143,12 @@ const CompatiblePassengers = () => {
                   <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {req.seats} lugar{req.seats > 1 ? 'es' : ''}</span>
                 </div>
                 <div className="flex gap-2">
-                  {req.hasPet && (
+                  {req.has_pet && (
                     <Badge variant="secondary" className="text-[10px] gap-1 rounded-full px-2 py-0.5">
-                      <PawPrint className="h-3 w-3" /> Mascota
+                      <PawPrint className="h-3 w-3" /> Mascota {req.pet_size ? `(${PET_SIZE_LABELS[req.pet_size] || req.pet_size})` : ''}
                     </Badge>
                   )}
-                  {req.hasLuggage && (
+                  {req.has_luggage && (
                     <Badge variant="secondary" className="text-[10px] gap-1 rounded-full px-2 py-0.5">
                       <Luggage className="h-3 w-3" /> Equipaje
                     </Badge>
@@ -77,12 +160,8 @@ const CompatiblePassengers = () => {
                 <p className="text-xs text-muted-foreground italic mb-3">"{req.message}"</p>
               )}
 
-              <Badge className="text-[10px] gap-1 rounded-full px-2.5 py-1 bg-accent/15 text-accent border-accent/30 mb-3">
-                <Sparkles className="h-3 w-3" /> Coincidencia alta
-              </Badge>
-
-              <Button className="w-full h-11 rounded-xl gap-1.5 text-sm gradient-accent text-primary-foreground" onClick={() => navigate('/driver-requests')}>
-                <Car className="h-4 w-4" /> Invitar a tu viaje
+              <Button className="w-full h-11 rounded-xl gap-1.5 text-sm gradient-accent text-primary-foreground" onClick={() => toast.info('Próximamente podrás invitar pasajeros a tu viaje.')}>
+                <Car className="h-4 w-4" /> Ofrecerme como chofer
               </Button>
             </div>
           </motion.div>

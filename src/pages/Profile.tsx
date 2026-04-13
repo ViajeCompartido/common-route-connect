@@ -216,7 +216,7 @@ const Profile = () => {
         )}
 
         <div className="space-y-2 pt-1">
-          <Button variant="outline" className="w-full h-12 gap-2 rounded-xl">
+          <Button variant="outline" className="w-full h-12 gap-2 rounded-xl" onClick={() => navigate('/settings')}>
             <Settings className="h-4 w-4" /> Configuración
           </Button>
           <Button variant="outline" className="w-full h-12 gap-2 rounded-xl text-destructive hover:text-destructive" onClick={handleLogout}>

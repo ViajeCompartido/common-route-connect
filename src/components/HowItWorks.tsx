@@ -5,8 +5,8 @@ const steps = [
   { icon: Search, label: 'Buscá un viaje', desc: 'Elegí de dónde salís, a dónde vas y cuándo querés viajar.', color: 'bg-primary/10 text-primary' },
   { icon: Send, label: 'Reservá tu lugar', desc: 'Mandale una solicitud al chofer. Sin compromiso.', color: 'bg-ocean-light/10 text-ocean-light' },
   { icon: CheckCircle2, label: 'Esperá la confirmación del chofer', desc: 'El chofer revisa tu perfil y te confirma o rechaza.', color: 'bg-accent/10 text-accent' },
-  { icon: CreditCard, label: 'Pagá solo si te aceptan', desc: 'El pago se habilita recién cuando el chofer te confirma.', color: 'bg-primary/10 text-primary' },
-  { icon: MessageCircle, label: 'Coordiná por chat', desc: 'Después de pagar se abre el chat para acordar punto de encuentro, equipaje o mascotas.', color: 'bg-ocean-light/10 text-ocean-light' },
+  { icon: MessageCircle, label: 'Coordiná por chat', desc: 'Después de que el chofer acepta, se abre un chat previo para coordinar punto de encuentro, horario, equipaje o mascotas. Solo después de esa coordinación se habilita el pago.', color: 'bg-ocean-light/10 text-ocean-light' },
+  { icon: CreditCard, label: 'Pagá con confianza', desc: 'El pago se habilita recién después de coordinar con el chofer.', color: 'bg-primary/10 text-primary' },
   { icon: Car, label: 'Viajá tranquilo', desc: 'Compartí el viaje, dividí los gastos y llegá a destino.', color: 'bg-accent/10 text-accent' },
   { icon: Star, label: 'Dejá tu opinión', desc: 'Al llegar, chofer y pasajero se califican mutuamente.', color: 'bg-primary/10 text-primary' },
 ];

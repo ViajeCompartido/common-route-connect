@@ -18,6 +18,7 @@ import TripDetail from "./pages/TripDetail";
 import Chat from "./pages/Chat";
 import PublishTrip from "./pages/PublishTrip";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/AdminDashboard";
 import NeedRide from "./pages/NeedRide";
 import CompatiblePassengers from "./pages/CompatiblePassengers";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/chat/:tripId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/publish" element={<ProtectedRoute><PublishTrip /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/need-ride" element={<ProtectedRoute><NeedRide /></ProtectedRoute>} />
             <Route path="/compatible-passengers" element={<ProtectedRoute><CompatiblePassengers /></ProtectedRoute>} />

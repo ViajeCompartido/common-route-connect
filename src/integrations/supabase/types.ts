@@ -121,6 +121,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mercadopago_accounts: {
+        Row: {
+          access_token: string | null
+          account_type: string
+          created_at: string
+          id: string
+          mp_email: string | null
+          mp_user_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_type: string
+          created_at?: string
+          id?: string
+          mp_email?: string | null
+          mp_user_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          account_type?: string
+          created_at?: string
+          id?: string
+          mp_email?: string | null
+          mp_user_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           booking_id: string

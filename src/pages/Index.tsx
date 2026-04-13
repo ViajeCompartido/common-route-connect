@@ -11,14 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Trip } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-
-// Helper to check if a trip is expired (date+time in the past)
-function isTripExpired(date: string, time: string): boolean {
-  try {
-    const dateTime = new Date(`${date}T${time}`);
-    return dateTime.getTime() < Date.now();
-  } catch { return false; }
-}
+import { isTripExpired } from '@/lib/tripUtils';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -29,7 +22,6 @@ const Index = () => {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    // Load trips and ride requests in parallel
     const [tripsRes, requestsRes] = await Promise.all([
       supabase.from('trips').select('*').eq('status', 'active').gt('available_seats', 0).order('date', { ascending: true }).limit(3),
       supabase.from('ride_requests').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(3),
@@ -38,7 +30,6 @@ const Index = () => {
     const tripsData = (tripsRes.data ?? []).filter(t => !isTripExpired(t.date, t.time));
     const requestsData = (requestsRes.data ?? []).filter(r => !isTripExpired(r.date, r.time));
 
-    // Fetch all needed profiles
     const driverIds = [...new Set(tripsData.map(t => t.driver_id))];
     const passengerIds = [...new Set(requestsData.map(r => r.passenger_id))];
     const allIds = [...new Set([...driverIds, ...passengerIds])];
@@ -118,7 +109,6 @@ const Index = () => {
         <FeatureBlocks />
         <VerifiedDrivers />
 
-        {/* Trips from drivers */}
         <div>
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-base font-heading font-bold">Viajes disponibles</h2>
@@ -136,7 +126,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Ride requests from passengers */}
         {rideRequests.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-1">

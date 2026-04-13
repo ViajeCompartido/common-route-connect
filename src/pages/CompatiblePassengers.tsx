@@ -19,9 +19,7 @@ interface RideRequestRow {
 
 const PET_SIZE_LABELS: Record<string, string> = { small: 'Chica', medium: 'Mediana', large: 'Grande' };
 
-function isExpired(date: string, time: string): boolean {
-  try { return new Date(`${date}T${time}`).getTime() < Date.now(); } catch { return false; }
-}
+import { isTripExpired } from '@/lib/tripUtils';
 
 const CompatiblePassengers = () => {
   const navigate = useNavigate();
@@ -36,7 +34,7 @@ const CompatiblePassengers = () => {
     const { data, error } = await supabase.from('ride_requests').select('*').eq('status', 'active').order('created_at', { ascending: false });
     if (error || !data) { setLoading(false); return; }
 
-    const filtered = data.filter(r => r.passenger_id !== user?.id && !isExpired(r.date, r.time));
+    const filtered = data.filter(r => r.passenger_id !== user?.id && !isTripExpired(r.date, r.time));
     if (filtered.length === 0) { setRequests([]); setLoading(false); return; }
 
     const passengerIds = [...new Set(filtered.map(r => r.passenger_id))];

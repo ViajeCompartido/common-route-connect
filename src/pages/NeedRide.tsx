@@ -108,7 +108,7 @@ const NeedRide = () => {
               </div>
 
               <div>
-                <Label className="text-[10px] text-muted-foreground mb-1 block">Lugares que necesitás</Label>
+                <Label className="text-[10px] text-muted-foreground mb-1 block">¿Cuántas personas viajan?</Label>
                 <div className="relative">
                   <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input type="number" min="1" max="6" value={form.seats} onChange={e => setForm({ ...form, seats: e.target.value })} className="pl-10 h-12 rounded-xl" />

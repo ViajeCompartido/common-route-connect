@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil, AlertTriangle, Car, MapPinCheck, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,6 +20,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { isTripExpired } from '@/lib/tripUtils';
 import { normalizeLocation } from '@/lib/normalizeLocation';
 import { calculatePriceBreakdown } from '@/lib/tripUtils';
+import { getRefundInfo, CANCELLABLE_STATUSES } from '@/lib/cancellationPolicy';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;
@@ -50,6 +51,9 @@ const bookingStatusConfig: Record<string, { label: string; color: string; icon: 
   accepted: { label: 'Aceptado', color: 'bg-blue-500/15 text-blue-700 border-blue-500/30', icon: CheckCircle2 },
   coordinating: { label: 'Coordinando', color: 'bg-primary/15 text-primary border-primary/30', icon: MessageCircle },
   paid: { label: 'Pagado', color: 'bg-accent/15 text-accent border-accent/30', icon: CreditCard },
+  driver_on_way: { label: 'Chofer en camino', color: 'bg-sky-500/15 text-sky-700 border-sky-500/30', icon: Car },
+  driver_arrived: { label: 'Chofer llegó', color: 'bg-indigo-500/15 text-indigo-700 border-indigo-500/30', icon: MapPinCheck },
+  in_transit: { label: 'En viaje', color: 'bg-violet-500/15 text-violet-700 border-violet-500/30', icon: Route },
   completed: { label: 'Completado', color: 'bg-green-500/15 text-green-700 border-green-500/30', icon: CheckCircle2 },
   cancelled_passenger: { label: 'Cancelado', color: 'bg-destructive/15 text-destructive border-destructive/30', icon: XCircle },
   cancelled_driver: { label: 'Cancelado por chofer', color: 'bg-destructive/15 text-destructive border-destructive/30', icon: XCircle },

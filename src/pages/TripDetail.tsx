@@ -168,6 +168,27 @@ const TripDetail = () => {
     toast('Solicitud cancelada.');
   };
 
+  const handlePay = async () => {
+    if (!bookingId || !trip) return;
+    setPaymentLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-mp-preference', {
+        body: { booking_id: bookingId },
+      });
+      if (error) throw error;
+      if (data?.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        toast.error('No se pudo generar el link de pago.');
+      }
+    } catch (err) {
+      console.error('Payment error:', err);
+      toast.error('Error al iniciar el pago. Intentá de nuevo.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   if (loading || profileLoading) {
     return <div className="min-h-screen pb-24 flex items-center justify-center"><p className="text-muted-foreground">Cargando viaje...</p></div>;
   }

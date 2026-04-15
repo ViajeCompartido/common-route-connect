@@ -332,19 +332,19 @@ const MyTrips = () => {
                         <div className="flex justify-between"><span>Cargo de servicio</span><span>+${breakdown.serviceFee.toLocaleString()}</span></div>
                         <div className="flex justify-between font-bold text-foreground border-t border-border pt-1 mt-1"><span>Total</span><span className="text-primary">${breakdown.totalForPassenger.toLocaleString()}</span></div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {b.status === 'coordinating' && (
                           <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.trip_id}?phase=coordination`)}>
                             <MessageCircle className="h-3 w-3" /> Coordinar
                           </Button>
                         )}
-                        {b.status === 'paid' && (
+                        {['paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && (
                           <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.trip_id}`)}>
                             <MessageCircle className="h-3 w-3" /> Chatear
                           </Button>
                         )}
-                        {['pending', 'accepted', 'coordinating'].includes(b.status) && (
-                          <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === b.id} onClick={() => handleCancelBooking(b.id)}>
+                        {CANCELLABLE_STATUSES.includes(b.status) && (
+                          <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === b.id} onClick={() => promptCancelBooking(b)}>
                             <XCircle className="h-3 w-3" /> Cancelar
                           </Button>
                         )}

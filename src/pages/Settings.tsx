@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Phone, MapPin, Lock, Car, PawPrint, Bell, CreditCard, Wallet, LogOut, ChevronRight, Construction } from 'lucide-react';
+import { ArrowLeft, User, Phone, Lock, Car, PawPrint, Bell, CreditCard, Wallet, LogOut, ChevronRight, Construction } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';

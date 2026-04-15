@@ -611,6 +611,37 @@ const MyTrips = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={!!cancelConfirm} onOpenChange={(open) => !open && setCancelConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" /> Cancelar reserva
+            </DialogTitle>
+          </DialogHeader>
+          {cancelConfirm && (
+            <div className="space-y-3">
+              <p className="text-sm text-foreground">{cancelConfirm.booking.origin} → {cancelConfirm.booking.destination}</p>
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+                <p className="text-sm font-semibold text-amber-700">{cancelConfirm.refund.label}</p>
+                <p className="text-xs text-muted-foreground mt-1">{cancelConfirm.refund.description}</p>
+              </div>
+              {cancelConfirm.refund.percentage < 100 && cancelConfirm.refund.percentage > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Se te reembolsará el {cancelConfirm.refund.percentage}% del monto pagado. El resto queda como compensación para el chofer.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCancelConfirm(null)}>Volver</Button>
+            <Button variant="destructive" disabled={actionLoading === cancelConfirm?.booking.id} onClick={confirmCancelBooking}>
+              Confirmar cancelación
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav role="passenger" />
     </div>
   );

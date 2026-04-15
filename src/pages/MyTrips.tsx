@@ -365,13 +365,20 @@ const MyTrips = () => {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-3">
-              {pastRequests.map((r, i) => (
-                <div key={r.id} className="bg-card rounded-2xl p-4 border border-border opacity-70">
-                  <div className="flex items-center gap-1.5 mb-1"><Hand className="h-3 w-3 text-muted-foreground" /><span className="text-[10px] text-muted-foreground uppercase">Busqué viaje</span></div>
-                  <p className="font-semibold text-sm font-heading">{r.origin} → {r.destination}</p>
-                  <p className="text-xs text-muted-foreground">{r.date} · {r.time}hs</p>
-                </div>
-              ))}
+              {pastRequests.map((r, i) => {
+                const isExpired = r.status === 'expired' || (r.status === 'active' && isItemExpired(r.date, r.time));
+                return (
+                  <div key={r.id} className="bg-card rounded-2xl p-4 border border-border opacity-70">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5"><Hand className="h-3 w-3 text-muted-foreground" /><span className="text-[10px] text-muted-foreground uppercase">Busqué viaje</span></div>
+                      {isExpired && <Badge className="text-[10px] gap-1 rounded-full px-2 py-0.5 border bg-muted text-muted-foreground border-border"><Clock className="h-3 w-3" /> Vencido</Badge>}
+                      {r.status === 'cancelled' && <Badge className="text-[10px] gap-1 rounded-full px-2 py-0.5 border bg-destructive/15 text-destructive border-destructive/30"><XCircle className="h-3 w-3" /> Cancelado</Badge>}
+                    </div>
+                    <p className="font-semibold text-sm font-heading">{r.origin} → {r.destination}</p>
+                    <p className="text-xs text-muted-foreground">{r.date} · {r.time}hs</p>
+                  </div>
+                );
+              })}
               {pastBookings.length === 0 && pastRequests.length === 0 ? (
                 <div className="text-center py-12"><p className="text-muted-foreground text-sm">No tenés viajes anteriores.</p></div>
               ) : pastBookings.map((b, i) => {

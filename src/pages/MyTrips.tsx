@@ -147,8 +147,17 @@ const MyTrips = () => {
     const { error } = await supabase.from('trips').update({ status: newStatus as any }).eq('id', tripId);
     if (error) { setActionLoading(null); toast.error('Error al actualizar.'); return; }
 
+    // Map trip status to booking progress statuses
+    const bookingProgressMap: Record<string, string> = {
+      in_progress: 'driver_on_way',
+    };
+    const bookingNewStatus = bookingProgressMap[newStatus];
+    if (bookingNewStatus) {
+      await supabase.from('bookings').update({ status: bookingNewStatus as any }).eq('trip_id', tripId).in('status', ['paid']);
+    }
+
     if (newStatus === 'completed') {
-      await supabase.from('bookings').update({ status: 'completed' as any }).eq('trip_id', tripId).in('status', ['paid', 'coordinating', 'accepted']);
+      await supabase.from('bookings').update({ status: 'completed' as any }).eq('trip_id', tripId).in('status', ['paid', 'driver_on_way', 'driver_arrived', 'in_transit', 'coordinating', 'accepted']);
       const { data: tripBookings } = await supabase.from('bookings').select('id').eq('trip_id', tripId);
       if (tripBookings && tripBookings.length > 0) {
         const bookingIds = tripBookings.map(b => b.id);
@@ -157,7 +166,7 @@ const MyTrips = () => {
     }
 
     setActionLoading(null);
-    const msgs: Record<string, string> = { paused: 'Viaje pausado.', active: 'Viaje reactivado.', full: 'Viaje marcado como lleno.', cancelled: 'Viaje cerrado.', in_progress: 'Viaje en curso.', completed: 'Viaje finalizado. El pago queda retenido hasta ser liberado.' };
+    const msgs: Record<string, string> = { paused: 'Viaje pausado.', active: 'Viaje reactivado.', full: 'Viaje marcado como lleno.', cancelled: 'Viaje cerrado.', in_progress: 'En camino. Los pasajeros fueron notificados.', completed: 'Viaje finalizado. El pago queda retenido hasta ser liberado.' };
     toast.success(msgs[newStatus] || 'Actualizado.');
     setDriverTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: newStatus } : t));
   };

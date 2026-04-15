@@ -120,12 +120,25 @@ const MyTrips = () => {
     setLoading(false);
   };
 
-  const handleCancelBooking = async (id: string) => {
+  const promptCancelBooking = (b: BookingRow) => {
+    const refund = getRefundInfo(b.status, b.date, b.time);
+    if (!refund.canCancel) {
+      toast.error('No podés cancelar este viaje en su estado actual.');
+      return;
+    }
+    setCancelConfirm({ booking: b, refund });
+  };
+
+  const confirmCancelBooking = async () => {
+    if (!cancelConfirm) return;
+    const id = cancelConfirm.booking.id;
     setActionLoading(id);
-    const { error } = await supabase.from('bookings').update({ status: 'cancelled_passenger' }).eq('id', id);
+    const { error } = await supabase.from('bookings').update({ status: 'cancelled_passenger' as any }).eq('id', id);
     setActionLoading(null);
+    setCancelConfirm(null);
     if (error) { toast.error('Error al cancelar.'); return; }
-    toast.success('Reserva cancelada.');
+    const pct = cancelConfirm.refund.percentage;
+    toast.success(pct === 100 ? 'Reserva cancelada. Reembolso completo.' : `Reserva cancelada. Reembolso del ${pct}%.`);
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled_passenger' } : b));
   };
 

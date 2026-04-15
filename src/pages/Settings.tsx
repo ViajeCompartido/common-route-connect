@@ -29,9 +29,8 @@ const Settings = () => {
     {
       title: 'Cuenta',
       items: [
-        { icon: User, label: 'Editar perfil', desc: 'Nombre, apellido, foto', action: () => navigate('/edit-profile') },
-        { icon: Phone, label: 'Cambiar celular', desc: profile?.phone || 'Sin celular', action: () => navigate('/edit-profile') },
-        { icon: MapPin, label: 'Cambiar ciudad', desc: profile?.city || 'Sin ciudad', action: () => navigate('/edit-profile') },
+        { icon: User, label: 'Editar perfil', desc: 'Nombre, apellido, foto y ciudad', action: () => navigate('/edit-profile') },
+        { icon: Phone, label: 'Cambiar celular', desc: 'Actualizá tu número de contacto', action: () => navigate('/edit-profile') },
         { icon: Lock, label: 'Cambiar contraseña', desc: 'Actualizá tu contraseña', action: () => navigate('/reset-password') },
       ],
     },

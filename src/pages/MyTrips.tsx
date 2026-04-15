@@ -447,10 +447,24 @@ const MyTrips = () => {
                                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'active')}><Play className="h-3 w-3" /> Reabrir</Button>
                               )}
                               {['active', 'paused', 'full'].includes(t.status) && (
-                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'in_progress')}><Navigation className="h-3 w-3" /> En curso</Button>
+                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'in_progress')}><Car className="h-3 w-3" /> En camino</Button>
                               )}
                               {t.status === 'in_progress' && (
-                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar viaje</Button>
+                                <>
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-indigo-600 text-white hover:bg-indigo-700" disabled={actionLoading === t.id} onClick={async () => {
+                                    setActionLoading(t.id);
+                                    await supabase.from('bookings').update({ status: 'driver_arrived' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'paid']);
+                                    setActionLoading(null);
+                                    toast.success('Llegaste al punto de encuentro.');
+                                  }}><MapPinCheck className="h-3 w-3" /> Llegué</Button>
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-violet-600 text-white hover:bg-violet-700" disabled={actionLoading === t.id} onClick={async () => {
+                                    setActionLoading(t.id);
+                                    await supabase.from('bookings').update({ status: 'in_transit' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'driver_arrived', 'paid']);
+                                    setActionLoading(null);
+                                    toast.success('Viaje iniciado.');
+                                  }}><Route className="h-3 w-3" /> Iniciar viaje</Button>
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar</Button>
+                                </>
                               )}
                               {['active', 'paused', 'full'].includes(t.status) && (
                                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'cancelled')}><Lock className="h-3 w-3" /> Cerrar</Button>

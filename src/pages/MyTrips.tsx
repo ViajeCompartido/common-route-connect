@@ -78,6 +78,7 @@ const MyTrips = () => {
   const [rideRequests, setRideRequests] = useState<RideRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState<{ booking: BookingRow; refund: ReturnType<typeof getRefundInfo> } | null>(null);
 
   // Edit dialogs
   const [editingTrip, setEditingTrip] = useState<TripRow | null>(null);

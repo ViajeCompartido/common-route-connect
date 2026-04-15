@@ -242,7 +242,7 @@ const MyTrips = () => {
   const isItemExpired = (date: string, time: string) => isTripExpired(date, time);
 
   const activeBookings = bookings.filter(b =>
-    ['pending', 'accepted', 'coordinating', 'paid'].includes(b.status) && !isItemExpired(b.date, b.time)
+    ['pending', 'accepted', 'coordinating', 'paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && !isItemExpired(b.date, b.time)
   );
   const pastBookings = bookings.filter(b =>
     ['completed', 'cancelled_passenger', 'cancelled_driver', 'rejected'].includes(b.status) || isItemExpired(b.date, b.time)

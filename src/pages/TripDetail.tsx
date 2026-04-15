@@ -411,36 +411,15 @@ const TripDetail = () => {
                   </div>
                 </div>
               )}
-              {bookingStatus === 'paid' && (
-                <div className="bg-accent/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
-                  <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-accent">¡Viaje confirmado!</p>
-                    <p className="text-[11px] text-muted-foreground">Pago recibido. Podés seguir usando el chat para coordinar detalles.</p>
-                  </div>
-                </div>
-              )}
-              {rejected && (
-                <div className="bg-destructive/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
-                  <XCircle className="h-5 w-5 text-destructive shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-destructive">El chofer no aceptó</p>
-                    <p className="text-[11px] text-muted-foreground">No te preocupes, hay muchos viajes disponibles.</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Action buttons */}
-              <div className="space-y-2">
-                {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
-                  <Button onClick={handleRequestSeat} disabled={submitting} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
-                    <Send className="h-4 w-4" /> {submitting ? 'Enviando...' : 'Reservar mi lugar'}
-                  </Button>
-                )}
-                {bookingStatus === 'accepted' && (
-                  <Button onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
-                    <MessageCircle className="h-4 w-4" /> Abrir chat de coordinación
-                  </Button>
+                {bookingStatus === 'coordinating' && (
+                  <>
+                    <Button onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)} variant="outline" className="w-full h-12 gap-2 rounded-xl text-sm font-semibold">
+                      <MessageCircle className="h-4 w-4" /> Chat de coordinación
+                    </Button>
+                    <Button onClick={handlePay} disabled={paymentLoading} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
+                      <CreditCard className="h-4 w-4" /> {paymentLoading ? 'Preparando pago...' : 'Pagar con Mercado Pago'}
+                    </Button>
+                  </>
                 )}
                 {bookingStatus === 'paid' && (
                   <Button onClick={() => navigate(`/chat/${trip.id}`)} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">

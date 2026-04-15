@@ -1,11 +1,11 @@
 /**
  * Check if a trip/request is expired.
- * Adds a 30-minute grace period after the scheduled departure time.
+ * Adds a 40-minute grace period after the scheduled departure time.
  */
 export function isTripExpired(date: string, time: string): boolean {
   try {
     const departureMs = new Date(`${date}T${time}`).getTime();
-    const graceMs = 30 * 60 * 1000; // 30 minutes
+    const graceMs = 40 * 60 * 1000; // 40 minutes
     return Date.now() > departureMs + graceMs;
   } catch {
     return false;

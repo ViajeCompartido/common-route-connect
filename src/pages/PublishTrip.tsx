@@ -193,7 +193,7 @@ const PublishTrip = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground mb-1 block">Lugares disponibles (máx. {maxVehicleSeats})</Label>
+                  <Label className="text-[10px] text-muted-foreground mb-1 block">¿Cuántos lugares ofrecés? (máx. {maxVehicleSeats})</Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input type="number" min={1} max={maxVehicleSeats} value={form.totalSeats} onChange={e => setForm({ ...form, totalSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />

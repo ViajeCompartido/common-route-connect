@@ -21,7 +21,8 @@ type BookingStep = 'none' | 'pending' | 'accepted' | 'coordinating' | 'confirmed
 const flowSteps = [
   { key: 'none', label: 'Solicitar', icon: Send },
   { key: 'pending', label: 'Esperar', icon: Clock },
-  { key: 'accepted', label: 'Coordinar', icon: MessageCircle },
+  { key: 'accepted', label: 'Aceptado', icon: CheckCircle2 },
+  { key: 'coordinating', label: 'Coordinar', icon: MessageCircle },
   { key: 'confirmed', label: 'Pagar', icon: CreditCard },
   { key: 'paid', label: '¡Listo!', icon: CheckCircle2 },
 ];

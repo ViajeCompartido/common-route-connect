@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil, AlertTriangle, Car, MapPinCheck, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,6 +20,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { isTripExpired } from '@/lib/tripUtils';
 import { normalizeLocation } from '@/lib/normalizeLocation';
 import { calculatePriceBreakdown } from '@/lib/tripUtils';
+import { getRefundInfo, CANCELLABLE_STATUSES } from '@/lib/cancellationPolicy';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;
@@ -50,6 +51,9 @@ const bookingStatusConfig: Record<string, { label: string; color: string; icon: 
   accepted: { label: 'Aceptado', color: 'bg-blue-500/15 text-blue-700 border-blue-500/30', icon: CheckCircle2 },
   coordinating: { label: 'Coordinando', color: 'bg-primary/15 text-primary border-primary/30', icon: MessageCircle },
   paid: { label: 'Pagado', color: 'bg-accent/15 text-accent border-accent/30', icon: CreditCard },
+  driver_on_way: { label: 'Chofer en camino', color: 'bg-sky-500/15 text-sky-700 border-sky-500/30', icon: Car },
+  driver_arrived: { label: 'Chofer llegó', color: 'bg-indigo-500/15 text-indigo-700 border-indigo-500/30', icon: MapPinCheck },
+  in_transit: { label: 'En viaje', color: 'bg-violet-500/15 text-violet-700 border-violet-500/30', icon: Route },
   completed: { label: 'Completado', color: 'bg-green-500/15 text-green-700 border-green-500/30', icon: CheckCircle2 },
   cancelled_passenger: { label: 'Cancelado', color: 'bg-destructive/15 text-destructive border-destructive/30', icon: XCircle },
   cancelled_driver: { label: 'Cancelado por chofer', color: 'bg-destructive/15 text-destructive border-destructive/30', icon: XCircle },
@@ -74,6 +78,7 @@ const MyTrips = () => {
   const [rideRequests, setRideRequests] = useState<RideRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState<{ booking: BookingRow; refund: ReturnType<typeof getRefundInfo> } | null>(null);
 
   // Edit dialogs
   const [editingTrip, setEditingTrip] = useState<TripRow | null>(null);
@@ -115,12 +120,25 @@ const MyTrips = () => {
     setLoading(false);
   };
 
-  const handleCancelBooking = async (id: string) => {
+  const promptCancelBooking = (b: BookingRow) => {
+    const refund = getRefundInfo(b.status, b.date, b.time);
+    if (!refund.canCancel) {
+      toast.error('No podés cancelar este viaje en su estado actual.');
+      return;
+    }
+    setCancelConfirm({ booking: b, refund });
+  };
+
+  const confirmCancelBooking = async () => {
+    if (!cancelConfirm) return;
+    const id = cancelConfirm.booking.id;
     setActionLoading(id);
-    const { error } = await supabase.from('bookings').update({ status: 'cancelled_passenger' }).eq('id', id);
+    const { error } = await supabase.from('bookings').update({ status: 'cancelled_passenger' as any }).eq('id', id);
     setActionLoading(null);
+    setCancelConfirm(null);
     if (error) { toast.error('Error al cancelar.'); return; }
-    toast.success('Reserva cancelada.');
+    const pct = cancelConfirm.refund.percentage;
+    toast.success(pct === 100 ? 'Reserva cancelada. Reembolso completo.' : `Reserva cancelada. Reembolso del ${pct}%.`);
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled_passenger' } : b));
   };
 
@@ -129,8 +147,17 @@ const MyTrips = () => {
     const { error } = await supabase.from('trips').update({ status: newStatus as any }).eq('id', tripId);
     if (error) { setActionLoading(null); toast.error('Error al actualizar.'); return; }
 
+    // Map trip status to booking progress statuses
+    const bookingProgressMap: Record<string, string> = {
+      in_progress: 'driver_on_way',
+    };
+    const bookingNewStatus = bookingProgressMap[newStatus];
+    if (bookingNewStatus) {
+      await supabase.from('bookings').update({ status: bookingNewStatus as any }).eq('trip_id', tripId).in('status', ['paid']);
+    }
+
     if (newStatus === 'completed') {
-      await supabase.from('bookings').update({ status: 'completed' as any }).eq('trip_id', tripId).in('status', ['paid', 'coordinating', 'accepted']);
+      await supabase.from('bookings').update({ status: 'completed' as any }).eq('trip_id', tripId).in('status', ['paid', 'driver_on_way', 'driver_arrived', 'in_transit', 'coordinating', 'accepted']);
       const { data: tripBookings } = await supabase.from('bookings').select('id').eq('trip_id', tripId);
       if (tripBookings && tripBookings.length > 0) {
         const bookingIds = tripBookings.map(b => b.id);
@@ -139,7 +166,7 @@ const MyTrips = () => {
     }
 
     setActionLoading(null);
-    const msgs: Record<string, string> = { paused: 'Viaje pausado.', active: 'Viaje reactivado.', full: 'Viaje marcado como lleno.', cancelled: 'Viaje cerrado.', in_progress: 'Viaje en curso.', completed: 'Viaje finalizado. El pago queda retenido hasta ser liberado.' };
+    const msgs: Record<string, string> = { paused: 'Viaje pausado.', active: 'Viaje reactivado.', full: 'Viaje marcado como lleno.', cancelled: 'Viaje cerrado.', in_progress: 'En camino. Los pasajeros fueron notificados.', completed: 'Viaje finalizado. El pago queda retenido hasta ser liberado.' };
     toast.success(msgs[newStatus] || 'Actualizado.');
     setDriverTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: newStatus } : t));
   };
@@ -224,7 +251,7 @@ const MyTrips = () => {
   const isItemExpired = (date: string, time: string) => isTripExpired(date, time);
 
   const activeBookings = bookings.filter(b =>
-    ['pending', 'accepted', 'coordinating', 'paid'].includes(b.status) && !isItemExpired(b.date, b.time)
+    ['pending', 'accepted', 'coordinating', 'paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && !isItemExpired(b.date, b.time)
   );
   const pastBookings = bookings.filter(b =>
     ['completed', 'cancelled_passenger', 'cancelled_driver', 'rejected'].includes(b.status) || isItemExpired(b.date, b.time)
@@ -314,19 +341,19 @@ const MyTrips = () => {
                         <div className="flex justify-between"><span>Cargo de servicio</span><span>+${breakdown.serviceFee.toLocaleString()}</span></div>
                         <div className="flex justify-between font-bold text-foreground border-t border-border pt-1 mt-1"><span>Total</span><span className="text-primary">${breakdown.totalForPassenger.toLocaleString()}</span></div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {b.status === 'coordinating' && (
                           <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.trip_id}?phase=coordination`)}>
                             <MessageCircle className="h-3 w-3" /> Coordinar
                           </Button>
                         )}
-                        {b.status === 'paid' && (
+                        {['paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && (
                           <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.trip_id}`)}>
                             <MessageCircle className="h-3 w-3" /> Chatear
                           </Button>
                         )}
-                        {['pending', 'accepted', 'coordinating'].includes(b.status) && (
-                          <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === b.id} onClick={() => handleCancelBooking(b.id)}>
+                        {CANCELLABLE_STATUSES.includes(b.status) && (
+                          <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === b.id} onClick={() => promptCancelBooking(b)}>
                             <XCircle className="h-3 w-3" /> Cancelar
                           </Button>
                         )}
@@ -420,10 +447,24 @@ const MyTrips = () => {
                                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'active')}><Play className="h-3 w-3" /> Reabrir</Button>
                               )}
                               {['active', 'paused', 'full'].includes(t.status) && (
-                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'in_progress')}><Navigation className="h-3 w-3" /> En curso</Button>
+                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'in_progress')}><Car className="h-3 w-3" /> En camino</Button>
                               )}
                               {t.status === 'in_progress' && (
-                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar viaje</Button>
+                                <>
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-indigo-600 text-white hover:bg-indigo-700" disabled={actionLoading === t.id} onClick={async () => {
+                                    setActionLoading(t.id);
+                                    await supabase.from('bookings').update({ status: 'driver_arrived' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'paid']);
+                                    setActionLoading(null);
+                                    toast.success('Llegaste al punto de encuentro.');
+                                  }}><MapPinCheck className="h-3 w-3" /> Llegué</Button>
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-violet-600 text-white hover:bg-violet-700" disabled={actionLoading === t.id} onClick={async () => {
+                                    setActionLoading(t.id);
+                                    await supabase.from('bookings').update({ status: 'in_transit' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'driver_arrived', 'paid']);
+                                    setActionLoading(null);
+                                    toast.success('Viaje iniciado.');
+                                  }}><Route className="h-3 w-3" /> Iniciar viaje</Button>
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar</Button>
+                                </>
                               )}
                               {['active', 'paused', 'full'].includes(t.status) && (
                                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'cancelled')}><Lock className="h-3 w-3" /> Cerrar</Button>
@@ -566,6 +607,37 @@ const MyTrips = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingRequest(null)}>Cancelar</Button>
             <Button onClick={saveEditRequest} disabled={editSaving} className="gradient-accent text-primary-foreground">{editSaving ? 'Guardando...' : 'Guardar cambios'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={!!cancelConfirm} onOpenChange={(open) => !open && setCancelConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" /> Cancelar reserva
+            </DialogTitle>
+          </DialogHeader>
+          {cancelConfirm && (
+            <div className="space-y-3">
+              <p className="text-sm text-foreground">{cancelConfirm.booking.origin} → {cancelConfirm.booking.destination}</p>
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+                <p className="text-sm font-semibold text-amber-700">{cancelConfirm.refund.label}</p>
+                <p className="text-xs text-muted-foreground mt-1">{cancelConfirm.refund.description}</p>
+              </div>
+              {cancelConfirm.refund.percentage < 100 && cancelConfirm.refund.percentage > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Se te reembolsará el {cancelConfirm.refund.percentage}% del monto pagado. El resto queda como compensación para el chofer.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCancelConfirm(null)}>Volver</Button>
+            <Button variant="destructive" disabled={actionLoading === cancelConfirm?.booking.id} onClick={confirmCancelBooking}>
+              Confirmar cancelación
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

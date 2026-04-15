@@ -63,6 +63,7 @@ const TripDetail = () => {
   const [rejected, setRejected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const [reqSeats, setReqSeats] = useState(1);
   const [reqHasPet, setReqHasPet] = useState(false);

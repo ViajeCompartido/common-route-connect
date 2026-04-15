@@ -411,6 +411,19 @@ const TripDetail = () => {
                   </div>
                 </div>
               )}
+
+              {/* Action buttons */}
+              <div className="space-y-2">
+                {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
+                  <Button onClick={handleRequestSeat} disabled={submitting} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
+                    <Send className="h-4 w-4" /> {submitting ? 'Enviando...' : 'Reservar mi lugar'}
+                  </Button>
+                )}
+                {bookingStatus === 'accepted' && (
+                  <Button onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
+                    <MessageCircle className="h-4 w-4" /> Abrir chat de coordinación
+                  </Button>
+                )}
                 {bookingStatus === 'coordinating' && (
                   <>
                     <Button onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)} variant="outline" className="w-full h-12 gap-2 rounded-xl text-sm font-semibold">

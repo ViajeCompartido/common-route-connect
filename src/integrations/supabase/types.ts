@@ -499,6 +499,10 @@ export type Database = {
     }
     Functions: {
       add_driver_role: { Args: never; Returns: undefined }
+      calculate_refund_percentage: {
+        Args: { _booking_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -522,6 +526,9 @@ export type Database = {
         | "cancelled_passenger"
         | "cancelled_driver"
         | "rejected"
+        | "driver_on_way"
+        | "driver_arrived"
+        | "in_transit"
       message_phase: "pre_payment" | "post_payment"
       payment_status:
         | "pending"
@@ -674,6 +681,9 @@ export const Constants = {
         "cancelled_passenger",
         "cancelled_driver",
         "rejected",
+        "driver_on_way",
+        "driver_arrived",
+        "in_transit",
       ],
       message_phase: ["pre_payment", "post_payment"],
       payment_status: [

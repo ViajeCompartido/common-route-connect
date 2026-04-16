@@ -2,6 +2,7 @@ import { Home, Search, PlusCircle, User, LayoutDashboard, ClipboardList, Hand, U
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 const passengerNav = [
   { icon: Home, label: 'Inicio', path: '/' },
@@ -32,8 +33,11 @@ interface BottomNavProps {
 const BottomNav = ({ role = 'passenger' }: BottomNavProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { totalUnread } = useUnreadMessages();
 
   const navItems = role === 'admin' ? adminNav : role === 'driver' ? driverNav : passengerNav;
+  // Path that holds chats list per role
+  const chatHostPath = role === 'driver' ? '/driver-requests' : '/my-trips';
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border">
@@ -56,7 +60,14 @@ const BottomNav = ({ role = 'passenger' }: BottomNavProps) => {
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-              <item.icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} />
+              <div className="relative">
+                <item.icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} />
+                {item.path === chatHostPath && totalUnread > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                    {totalUnread > 9 ? '9+' : totalUnread}
+                  </span>
+                )}
+              </div>
               <span className={cn("text-[9px]", isActive ? "font-bold" : "font-medium")}>{item.label}</span>
             </button>
           );

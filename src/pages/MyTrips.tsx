@@ -130,6 +130,29 @@ const MyTrips = () => {
     setCancelConfirm({ booking: b, refund });
   };
 
+  const handlePayBooking = async (bookingId: string) => {
+    const actionKey = `pay-${bookingId}`;
+    setActionLoading(actionKey);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-mp-preference', {
+        body: { booking_id: bookingId },
+      });
+
+      if (error) throw error;
+      if (data?.init_point) {
+        window.location.href = data.init_point;
+        return;
+      }
+
+      toast.error('No se pudo generar el link de pago.');
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al iniciar el pago. Intentá de nuevo.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const confirmCancelBooking = async () => {
     if (!cancelConfirm) return;
     const id = cancelConfirm.booking.id;
@@ -343,13 +366,18 @@ const MyTrips = () => {
                         <div className="flex justify-between font-bold text-foreground border-t border-border pt-1 mt-1"><span>Total</span><span className="text-primary">{formatPrice(breakdown.totalForPassenger)}</span></div>
                       </div>
                       <div className="flex gap-2 flex-wrap">
-                        {b.status === 'coordinating' && (
-                          <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.trip_id}?phase=coordination`)}>
+                        {['accepted', 'coordinating'].includes(b.status) && (
+                          <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.id}?phase=coordination`)}>
                             <MessageCircle className="h-3 w-3" /> Coordinar
                           </Button>
                         )}
+                        {['accepted', 'coordinating'].includes(b.status) && (
+                          <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === `pay-${b.id}`} onClick={() => handlePayBooking(b.id)}>
+                            <CreditCard className="h-3 w-3" /> {actionLoading === `pay-${b.id}` ? 'Preparando...' : 'Pagar'}
+                          </Button>
+                        )}
                         {['paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && (
-                          <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.trip_id}`)}>
+                          <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.id}`)}>
                             <MessageCircle className="h-3 w-3" /> Chatear
                           </Button>
                         )}

@@ -19,6 +19,24 @@ import { formatPrice } from '@/lib/formatPrice';
 
 type BookingStep = 'none' | 'pending' | 'accepted' | 'coordinating' | 'confirmed' | 'paid';
 
+interface ExistingBooking {
+  id: string;
+  status: string;
+  seats: number;
+  price_per_seat: number;
+  pet_surcharge: number | null;
+}
+
+const paymentEnabledStatuses = ['accepted', 'coordinating'];
+const paidStatuses = ['paid', 'driver_on_way', 'driver_arrived', 'in_transit', 'completed'];
+
+const mapBookingStatusToStep = (status: string): BookingStep => {
+  if (status === 'pending') return 'pending';
+  if (paymentEnabledStatuses.includes(status)) return 'coordinating';
+  if (paidStatuses.includes(status)) return 'paid';
+  return 'none';
+};
+
 const flowSteps = [
   { key: 'none', label: 'Solicitar', icon: Send },
   { key: 'pending', label: 'Esperar', icon: Clock },
@@ -62,6 +80,7 @@ const TripDetail = () => {
   const [petSurcharges, setPetSurcharges] = useState<PetSurcharge[]>([]);
   const [bookingStatus, setBookingStatus] = useState<BookingStep>('none');
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [existingBooking, setExistingBooking] = useState<ExistingBooking | null>(null);
   const [rejected, setRejected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -80,6 +99,36 @@ const TripDetail = () => {
     });
   }, [id]);
 
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const interval = window.setInterval(() => {
+      syncExistingBooking(id, user.id);
+    }, 4000);
+
+    return () => window.clearInterval(interval);
+  }, [id, user]);
+
+  const syncExistingBooking = async (tripId: string, passengerId: string) => {
+    const { data } = await supabase.from('bookings')
+      .select('id, status, seats, price_per_seat, pet_surcharge')
+      .eq('trip_id', tripId)
+      .eq('passenger_id', passengerId)
+      .not('status', 'in', '("cancelled_passenger","cancelled_driver","rejected")')
+      .maybeSingle();
+
+    if (!data) {
+      setExistingBooking(null);
+      setBookingId(null);
+      setBookingStatus('none');
+      return;
+    }
+
+    setExistingBooking(data as ExistingBooking);
+    setBookingId(data.id);
+    setBookingStatus(mapBookingStatusToStep(data.status));
+  };
+
   const loadTrip = async () => {
     setLoading(true);
     const { data: tripData, error } = await supabase.from('trips').select('*').eq('id', id).single();
@@ -94,16 +143,7 @@ const TripDetail = () => {
     if (driverData?.pet_sizes_accepted) setDriverPetSizes(driverData.pet_sizes_accepted as string[]);
 
     if (user) {
-      const { data: existingBooking } = await supabase.from('bookings')
-        .select('id, status')
-        .eq('trip_id', id).eq('passenger_id', user.id)
-        .not('status', 'in', '("cancelled_passenger","cancelled_driver","rejected")')
-        .maybeSingle();
-      if (existingBooking) {
-        setBookingId(existingBooking.id);
-        const statusMap: Record<string, BookingStep> = { pending: 'pending', accepted: 'accepted', coordinating: 'coordinating', paid: 'paid', completed: 'paid' };
-        setBookingStatus(statusMap[existingBooking.status] || 'none');
-      }
+      await syncExistingBooking(tripData.id, user.id);
     }
     setLoading(false);
   };
@@ -113,6 +153,9 @@ const TripDetail = () => {
     : 0;
 
   const breakdown = trip ? calculatePriceBreakdown(Number(trip.price_per_seat), reqSeats, petSurcharge) : null;
+  const bookedBreakdown = existingBooking
+    ? calculatePriceBreakdown(Number(existingBooking.price_per_seat), existingBooking.seats, Number(existingBooking.pet_surcharge) || 0)
+    : null;
 
   const handleRequestSeat = async () => {
     if (!user || !trip) return;
@@ -157,6 +200,13 @@ const TripDetail = () => {
       return;
     }
     setBookingId(data.id);
+    setExistingBooking({
+      id: data.id,
+      status: 'pending',
+      seats: reqSeats,
+      price_per_seat: Number(trip.price_per_seat),
+      pet_surcharge: petSurcharge,
+    });
     setBookingStatus('pending');
     toast.success('¡Solicitud enviada!');
   };
@@ -166,6 +216,7 @@ const TripDetail = () => {
     await supabase.from('bookings').update({ status: 'cancelled_passenger' }).eq('id', bookingId);
     setBookingStatus('none');
     setBookingId(null);
+    setExistingBooking(null);
     setRejected(false);
     toast('Solicitud cancelada.');
   };
@@ -394,7 +445,30 @@ const TripDetail = () => {
                   </div>
                 </div>
               )}
-              {bookingStatus === 'accepted' && (
+               {paymentEnabledStatuses.includes(existingBooking?.status || '') && bookedBreakdown && (
+                 <div className="bg-primary/5 rounded-xl p-3 mb-4 space-y-1">
+                   <p className="text-[11px] font-semibold text-primary">Resumen del pago</p>
+                   <div className="flex justify-between text-xs text-muted-foreground">
+                     <span>{existingBooking?.seats} asiento{existingBooking?.seats && existingBooking.seats > 1 ? 's' : ''} × {formatPrice(Number(existingBooking?.price_per_seat || 0))}</span>
+                     <span>{formatPrice(bookedBreakdown.basePrice)}</span>
+                   </div>
+                   {bookedBreakdown.petSurcharge > 0 && (
+                     <div className="flex justify-between text-xs text-muted-foreground">
+                       <span>Adicional mascota</span>
+                       <span>+{formatPrice(bookedBreakdown.petSurcharge)}</span>
+                     </div>
+                   )}
+                   <div className="flex justify-between text-xs text-muted-foreground">
+                     <span>Cargo de servicio</span>
+                     <span>+{formatPrice(bookedBreakdown.serviceFee)}</span>
+                   </div>
+                   <div className="flex justify-between text-sm font-bold border-t border-border pt-1 mt-1">
+                     <span>Total a pagar</span>
+                     <span className="text-primary">{formatPrice(bookedBreakdown.totalForPassenger)}</span>
+                   </div>
+                 </div>
+               )}
+               {bookingStatus === 'accepted' && (
                 <div className="bg-accent/10 rounded-xl p-3 mb-4 flex items-center gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
                   <div>
@@ -420,14 +494,9 @@ const TripDetail = () => {
                     <Send className="h-4 w-4" /> {submitting ? 'Enviando...' : 'Reservar mi lugar'}
                   </Button>
                 )}
-                {bookingStatus === 'accepted' && (
-                  <Button onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
-                    <MessageCircle className="h-4 w-4" /> Abrir chat de coordinación
-                  </Button>
-                )}
-                {bookingStatus === 'coordinating' && (
+                {paymentEnabledStatuses.includes(existingBooking?.status || '') && bookingId && (
                   <>
-                    <Button onClick={() => navigate(`/chat/${trip.id}?phase=coordination`)} variant="outline" className="w-full h-12 gap-2 rounded-xl text-sm font-semibold">
+                    <Button onClick={() => navigate(`/chat/${bookingId}?phase=coordination`)} variant="outline" className="w-full h-12 gap-2 rounded-xl text-sm font-semibold">
                       <MessageCircle className="h-4 w-4" /> Chat de coordinación
                     </Button>
                     <Button onClick={handlePay} disabled={paymentLoading} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
@@ -435,8 +504,8 @@ const TripDetail = () => {
                     </Button>
                   </>
                 )}
-                {bookingStatus === 'paid' && (
-                  <Button onClick={() => navigate(`/chat/${trip.id}`)} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
+                {bookingStatus === 'paid' && bookingId && (
+                  <Button onClick={() => navigate(`/chat/${bookingId}`)} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
                     <MessageCircle className="h-4 w-4" /> Chat con {driverName.split(' ')[0]}
                   </Button>
                 )}

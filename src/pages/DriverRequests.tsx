@@ -87,12 +87,13 @@ const DriverRequests = () => {
   };
 
   const handleAccept = async (booking: BookingWithDetails) => {
+    if (!user) return;
     setActionLoading(booking.id);
 
-    // Update booking status to accepted
+    // Update booking status to coordination phase immediately
     const { error: bookingError } = await supabase
       .from('bookings')
-      .update({ status: 'accepted' })
+      .update({ status: 'coordinating' })
       .eq('id', booking.id);
 
     if (bookingError) {
@@ -116,12 +117,24 @@ const DriverRequests = () => {
       await supabase.from('trips').update(updates).eq('id', booking.trip_id);
     }
 
+    const { error: messageError } = await supabase.from('messages').insert({
+      booking_id: booking.id,
+      sender_id: user.id,
+      phase: 'pre_payment',
+      content: `¡Hola! Te acepté la solicitud para ${booking.tripOrigin} → ${booking.tripDestination}. Coordinemos punto de encuentro, horario exacto y cualquier detalle antes del pago.`,
+    });
+
     setActionLoading(null);
-    toast.success('¡Solicitud aceptada! Se abre el chat de coordinación.');
+    if (messageError) {
+      console.error(messageError);
+      toast.success('Solicitud aceptada. El pasajero ya puede coordinar y pagar.');
+    } else {
+      toast.success('Solicitud aceptada. Se abrió el chat de coordinación y se habilitó el pago.');
+    }
 
     // Update local state
     setBookings(prev => prev.map(b =>
-      b.id === booking.id ? { ...b, status: 'accepted' } : b
+      b.id === booking.id ? { ...b, status: 'coordinating' } : b
     ));
   };
 
@@ -238,14 +251,14 @@ const DriverRequests = () => {
                     </Button>
                   </div>
                 )}
-                {req.status === 'accepted' && (
+                {['accepted', 'coordinating'].includes(req.status) && (
                   <div className="bg-accent/10 rounded-xl p-3 flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
                     <div className="flex-1">
-                      <p className="text-xs font-semibold text-accent">Aceptado</p>
-                      <p className="text-[10px] text-muted-foreground">Se abrió el chat de coordinación.</p>
+                      <p className="text-xs font-semibold text-accent">Coordinación habilitada</p>
+                      <p className="text-[10px] text-muted-foreground">El pasajero ya puede ver el chat, el resumen y pagar el viaje.</p>
                     </div>
-                    <Button size="sm" className="h-8 rounded-lg gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${req.trip_id}?phase=coordination`)}>
+                    <Button size="sm" className="h-8 rounded-lg gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${req.id}?phase=coordination`)}>
                       <MessageCircle className="h-3 w-3" /> Chat
                     </Button>
                   </div>

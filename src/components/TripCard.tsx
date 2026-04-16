@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getInitial } from '@/lib/avatarUtils';
+import { formatPrice } from '@/lib/formatPrice';
 
 interface TripCardProps {
   trip: Trip;
@@ -50,7 +51,7 @@ const TripCard = ({ trip, index = 0, type = 'driver', viewerIsDriver = false, vi
             </div>
             {!isPassengerRequest && (
               <div className="text-right">
-                <p className="text-lg font-bold font-heading text-primary leading-tight">${trip.pricePerSeat.toLocaleString()}</p>
+                <p className="text-lg font-bold font-heading text-primary leading-tight">{formatPrice(trip.pricePerSeat)}</p>
                 <p className="text-[10px] text-muted-foreground">por asiento</p>
               </div>
             )}

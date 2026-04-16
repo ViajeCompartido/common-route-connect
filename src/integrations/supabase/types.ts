@@ -82,6 +82,7 @@ export type Database = {
       driver_profiles: {
         Row: {
           accepts_pets: boolean
+          color: string | null
           created_at: string
           id: string
           license_url: string | null
@@ -95,6 +96,7 @@ export type Database = {
         }
         Insert: {
           accepts_pets?: boolean
+          color?: string | null
           created_at?: string
           id?: string
           license_url?: string | null
@@ -108,6 +110,7 @@ export type Database = {
         }
         Update: {
           accepts_pets?: boolean
+          color?: string | null
           created_at?: string
           id?: string
           license_url?: string | null

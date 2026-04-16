@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { calculatePriceBreakdown } from '@/lib/tripUtils';
+import { formatPrice } from '@/lib/formatPrice';
 
 type BookingStep = 'none' | 'pending' | 'accepted' | 'coordinating' | 'confirmed' | 'paid';
 
@@ -228,7 +229,7 @@ const TripDetail = () => {
                 <p className="font-semibold text-sm">{trip.destination}</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-heading font-bold text-primary">${Number(trip.price_per_seat).toLocaleString()}</p>
+                <p className="text-2xl font-heading font-bold text-primary">{formatPrice(Number(trip.price_per_seat))}</p>
                 <p className="text-[10px] text-muted-foreground">por asiento</p>
               </div>
             </div>
@@ -360,24 +361,24 @@ const TripDetail = () => {
                   {breakdown && (
                     <div className="bg-primary/5 rounded-xl p-3 space-y-1">
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{reqSeats} asiento{reqSeats > 1 ? 's' : ''} × ${Number(trip.price_per_seat).toLocaleString()}</span>
-                        <span>${breakdown.basePrice.toLocaleString()}</span>
+                        <span>{reqSeats} asiento{reqSeats > 1 ? 's' : ''} × {formatPrice(Number(trip.price_per_seat))}</span>
+                        <span>{formatPrice(breakdown.basePrice)}</span>
                       </div>
                       {breakdown.petSurcharge > 0 && (
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>Adicional mascota ({PET_SIZE_LABELS[reqPetSize]})</span>
-                          <span>+${breakdown.petSurcharge.toLocaleString()}</span>
+                          <span>+{formatPrice(breakdown.petSurcharge)}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Cargo de servicio</span>
-                        <span>+${breakdown.serviceFee.toLocaleString()}</span>
+                        <span>+{formatPrice(breakdown.serviceFee)}</span>
                       </div>
                       <div className="flex justify-between text-sm font-bold border-t border-border pt-1 mt-1">
                         <span>Total a pagar</span>
-                        <span className="text-primary">${breakdown.totalForPassenger.toLocaleString()}</span>
+                        <span className="text-primary">{formatPrice(breakdown.totalForPassenger)}</span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-1">El chofer recibe ${breakdown.driverReceives.toLocaleString()}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">El chofer recibe {formatPrice(breakdown.driverReceives)}</p>
                     </div>
                   )}
                 </div>

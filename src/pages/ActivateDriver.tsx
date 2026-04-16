@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Car, CreditCard, Users, Camera, Shield, CheckCircle2, Info, PawPrint } from 'lucide-react';
+import { ArrowLeft, Car, CreditCard, Users, Camera, Shield, CheckCircle2, Info, PawPrint, Palette } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,7 @@ const ActivateDriver = () => {
   const [form, setForm] = useState({
     vehicle: '',
     plate: '',
+    color: '',
     maxSeats: '4',
     acceptsPets: false,
     petSizesAccepted: [] as string[],
@@ -81,11 +82,12 @@ const ActivateDriver = () => {
       user_id: user.id,
       vehicle: form.vehicle,
       plate: form.plate.toUpperCase(),
+      color: form.color || null,
       max_seats: parseInt(form.maxSeats),
       accepts_pets: form.acceptsPets,
       pet_sizes_accepted: form.petSizesAccepted,
       license_url: filePath,
-    });
+    } as any);
 
     if (driverError) {
       setIsLoading(false);
@@ -145,6 +147,11 @@ const ActivateDriver = () => {
             <div className="relative">
               <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Patente (ej: AB 123 CD)" value={form.plate} onChange={e => setForm({ ...form, plate: e.target.value })} className="pl-10 h-12 rounded-xl" required />
+            </div>
+
+            <div className="relative">
+              <Palette className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Color del vehículo (ej: Blanco)" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className="pl-10 h-12 rounded-xl" required />
             </div>
 
             <div>

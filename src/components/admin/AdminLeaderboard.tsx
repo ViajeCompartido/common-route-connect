@@ -83,6 +83,7 @@ const AdminLeaderboard = () => {
         {entries.map((e, i) => (
           <div key={e.id} className="flex items-center gap-3 py-2 px-1 rounded-lg hover:bg-muted/50">
             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+
               {i + 1}
             </div>
             <div className="flex-1 min-w-0">

@@ -21,6 +21,7 @@ import { isTripExpired } from '@/lib/tripUtils';
 import { normalizeLocation } from '@/lib/normalizeLocation';
 import { calculatePriceBreakdown } from '@/lib/tripUtils';
 import { getRefundInfo, CANCELLABLE_STATUSES } from '@/lib/cancellationPolicy';
+import { formatPrice } from '@/lib/formatPrice';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;
@@ -336,10 +337,10 @@ const MyTrips = () => {
                         <span>Chofer: <span className="font-medium text-foreground">{b.driverName}</span></span>
                       </div>
                       <div className="text-xs text-muted-foreground space-y-0.5 mb-3">
-                        <div className="flex justify-between"><span>{b.seats} asiento{b.seats > 1 ? 's' : ''} × ${Number(b.price_per_seat).toLocaleString()}</span><span>${breakdown.basePrice.toLocaleString()}</span></div>
-                        {breakdown.petSurcharge > 0 && <div className="flex justify-between"><span>Adicional mascota</span><span>+${breakdown.petSurcharge.toLocaleString()}</span></div>}
-                        <div className="flex justify-between"><span>Cargo de servicio</span><span>+${breakdown.serviceFee.toLocaleString()}</span></div>
-                        <div className="flex justify-between font-bold text-foreground border-t border-border pt-1 mt-1"><span>Total</span><span className="text-primary">${breakdown.totalForPassenger.toLocaleString()}</span></div>
+                        <div className="flex justify-between"><span>{b.seats} asiento{b.seats > 1 ? 's' : ''} × {formatPrice(Number(b.price_per_seat))}</span><span>{formatPrice(breakdown.basePrice)}</span></div>
+                        {breakdown.petSurcharge > 0 && <div className="flex justify-between"><span>Adicional mascota</span><span>+{formatPrice(breakdown.petSurcharge)}</span></div>}
+                        <div className="flex justify-between"><span>Cargo de servicio</span><span>+{formatPrice(breakdown.serviceFee)}</span></div>
+                        <div className="flex justify-between font-bold text-foreground border-t border-border pt-1 mt-1"><span>Total</span><span className="text-primary">{formatPrice(breakdown.totalForPassenger)}</span></div>
                       </div>
                       <div className="flex gap-2 flex-wrap">
                         {b.status === 'coordinating' && (
@@ -396,7 +397,7 @@ const MyTrips = () => {
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Chofer: <span className="font-medium text-foreground">{b.driverName}</span></span>
-                        <span className="font-heading font-bold text-primary">${(Number(b.price_per_seat) * b.seats + (Number(b.pet_surcharge) || 0)).toLocaleString()}</span>
+                        <span className="font-heading font-bold text-primary">{formatPrice(Number(b.price_per_seat) * b.seats + (Number(b.pet_surcharge) || 0))}</span>
                       </div>
                       {b.status === 'completed' && (
                         <Button size="sm" variant="outline" className="w-full h-9 rounded-xl gap-1 text-xs mt-3" onClick={() => navigate('/rate')}><Star className="h-3 w-3" /> Calificar</Button>
@@ -437,7 +438,7 @@ const MyTrips = () => {
                             </div>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
                               <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {t.available_seats}/{t.total_seats} lugares</span>
-                              <span className="font-heading font-bold text-primary">${Number(t.price_per_seat).toLocaleString()}/asiento</span>
+                              <span className="font-heading font-bold text-primary">{formatPrice(Number(t.price_per_seat))}/asiento</span>
                             </div>
                             <div className="flex gap-2 flex-wrap">
                               <Button size="sm" variant="outline" className="flex-1 h-9 rounded-xl gap-1 text-xs" onClick={() => navigate('/driver-requests')}>Solicitudes</Button>

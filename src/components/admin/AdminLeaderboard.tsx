@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Trophy, Star, DollarSign, Car } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateServiceFee } from '@/lib/tripUtils';
-import { getAvatarFallback } from '@/lib/avatarUtils';
+
 
 interface LeaderEntry {
   id: string;

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getInitial } from '@/lib/avatarUtils';
 import { formatPrice } from '@/lib/formatPrice';
+import { formatTime } from '@/lib/formatTime';
 
 interface TripCardProps {
   trip: Trip;
@@ -74,7 +75,7 @@ const TripCard = ({ trip, index = 0, type = 'driver', viewerIsDriver = false, vi
           <div className="flex items-center gap-4 mb-3 text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5" />
-              <span className="text-xs">{trip.date} · {trip.time}</span>
+              <span className="text-xs">{trip.date} · {formatTime(trip.time)}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />

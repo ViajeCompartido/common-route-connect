@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getInitial } from '@/lib/avatarUtils';
 import { toast } from 'sonner';
+import { markBookingSeen } from '@/hooks/useUnreadMessages';
 
 interface Message {
   id: string;

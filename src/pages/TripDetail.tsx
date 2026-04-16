@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { calculatePriceBreakdown } from '@/lib/tripUtils';
+import { formatPrice } from '@/lib/formatPrice';
 
 type BookingStep = 'none' | 'pending' | 'accepted' | 'coordinating' | 'confirmed' | 'paid';
 
@@ -228,7 +229,7 @@ const TripDetail = () => {
                 <p className="font-semibold text-sm">{trip.destination}</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-heading font-bold text-primary">${Number(trip.price_per_seat).toLocaleString()}</p>
+                <p className="text-2xl font-heading font-bold text-primary">{formatPrice(Number(trip.price_per_seat))}</p>
                 <p className="text-[10px] text-muted-foreground">por asiento</p>
               </div>
             </div>

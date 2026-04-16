@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Car, Users, DollarSign, TrendingUp, XCircle, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PLATFORM_COMMISSION_RATE, calculateServiceFee } from '@/lib/tripUtils';
+import { formatPrice } from '@/lib/formatPrice';
 
 const AdminStats = () => {
   const [stats, setStats] = useState({

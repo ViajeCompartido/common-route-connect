@@ -4,8 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Filter } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Pencil, Trash2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface UserRow {
   id: string;
@@ -18,6 +23,7 @@ interface UserRow {
   average_rating: number;
   created_at: string;
   roles: string[];
+  email?: string;
 }
 
 const AdminUsers = () => {
@@ -25,6 +31,11 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
+  const [editing, setEditing] = useState<UserRow | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [saving, setSaving] = useState(false);
+  const [viewUser, setViewUser] = useState<UserRow | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => { loadUsers(); }, []);
 
@@ -47,6 +58,46 @@ const AdminUsers = () => {
     }));
     setUsers(mapped);
     setLoading(false);
+  };
+
+  const openEdit = (u: UserRow) => {
+    setEditing(u);
+    setEditForm({
+      first_name: u.first_name,
+      last_name: u.last_name,
+      phone: u.phone || '',
+      city: u.city || '',
+      verified: u.verified,
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const { error } = await supabase.from('profiles').update({
+      first_name: editForm.first_name,
+      last_name: editForm.last_name,
+      phone: editForm.phone || null,
+      city: editForm.city || null,
+      verified: editForm.verified,
+    }).eq('id', editing.id);
+    setSaving(false);
+    if (error) { toast.error('Error al guardar.'); return; }
+    toast.success('Usuario actualizado.');
+    setEditing(null);
+    loadUsers();
+  };
+
+  const handleDelete = async (userId: string) => {
+    if (!confirm('¿Estás segura de eliminar este usuario? Esta acción no se puede deshacer.')) return;
+    setDeleting(userId);
+    // Delete roles first, then profile
+    await supabase.from('user_roles').delete().eq('user_id', userId);
+    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    setDeleting(null);
+    if (error) { toast.error('Error al eliminar.'); return; }
+    toast.success('Usuario eliminado.');
+    setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
   const filtered = users.filter(u => {
@@ -87,11 +138,12 @@ const AdminUsers = () => {
               <TableHead className="text-xs">Viajes</TableHead>
               <TableHead className="text-xs">Rating</TableHead>
               <TableHead className="text-xs">Registro</TableHead>
+              <TableHead className="text-xs">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-8">Sin resultados</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-8">Sin resultados</TableCell></TableRow>
             ) : filtered.map(u => (
               <TableRow key={u.id}>
                 <TableCell className="text-xs font-medium">
@@ -111,12 +163,81 @@ const AdminUsers = () => {
                 <TableCell className="text-xs">{u.total_trips}</TableCell>
                 <TableCell className="text-xs">{u.average_rating > 0 ? `⭐ ${Number(u.average_rating).toFixed(1)}` : '-'}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString('es-AR')}</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setViewUser(u)} title="Ver">
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(u)} title="Editar">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(u.id)} disabled={deleting === u.id} title="Eliminar">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </Card>
       <p className="text-[10px] text-muted-foreground text-right">{filtered.length} de {users.length} usuarios</p>
+
+      {/* View User Dialog */}
+      <Dialog open={!!viewUser} onOpenChange={(open) => !open && setViewUser(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Detalle del usuario</DialogTitle>
+          </DialogHeader>
+          {viewUser && (
+            <div className="space-y-2 text-sm">
+              <div><span className="text-muted-foreground">Nombre:</span> <span className="font-medium">{viewUser.first_name} {viewUser.last_name}</span></div>
+              <div><span className="text-muted-foreground">Teléfono:</span> {viewUser.phone || '-'}</div>
+              <div><span className="text-muted-foreground">Ciudad:</span> {viewUser.city || '-'}</div>
+              <div><span className="text-muted-foreground">Verificado:</span> {viewUser.verified ? 'Sí' : 'No'}</div>
+              <div><span className="text-muted-foreground">Viajes:</span> {viewUser.total_trips}</div>
+              <div><span className="text-muted-foreground">Rating:</span> {viewUser.average_rating > 0 ? Number(viewUser.average_rating).toFixed(1) : '-'}</div>
+              <div><span className="text-muted-foreground">Roles:</span> {viewUser.roles.map(r => r === 'passenger' ? 'Pasajero' : r === 'driver' ? 'Chofer' : 'Admin').join(', ')}</div>
+              <div><span className="text-muted-foreground">Registro:</span> {new Date(viewUser.created_at).toLocaleDateString('es-AR')}</div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Editar usuario</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Nombre</Label>
+              <Input value={editForm.first_name ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, first_name: e.target.value }))} className="h-9 text-sm" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Apellido</Label>
+              <Input value={editForm.last_name ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, last_name: e.target.value }))} className="h-9 text-sm" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Teléfono</Label>
+              <Input value={editForm.phone ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, phone: e.target.value }))} className="h-9 text-sm" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Ciudad</Label>
+              <Input value={editForm.city ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, city: e.target.value }))} className="h-9 text-sm" />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Verificado</Label>
+              <Switch checked={editForm.verified ?? false} onCheckedChange={v => setEditForm((f: any) => ({ ...f, verified: v }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button onClick={saveEdit} disabled={saving} className="gradient-accent text-primary-foreground">{saving ? 'Guardando...' : 'Guardar'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

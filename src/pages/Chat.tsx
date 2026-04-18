@@ -99,6 +99,7 @@ const Chat = () => {
 
   useEffect(() => {
     loadChat(true);
+    if (bookingId) markBookingSeen(bookingId);
   }, [bookingId, user?.id, phase]);
 
   useEffect(() => {
@@ -110,6 +111,13 @@ const Chat = () => {
 
     return () => window.clearInterval(interval);
   }, [bookingId, user?.id, phase]);
+
+  // Marcar como visto cada vez que llegan mensajes nuevos mientras el chat está abierto
+  useEffect(() => {
+    if (bookingId && messages.length > 0) {
+      markBookingSeen(bookingId);
+    }
+  }, [bookingId, messages.length]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

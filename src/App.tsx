@@ -31,6 +31,8 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import FAQ from "./pages/FAQ";
 import Help from "./pages/Help";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailure from "./pages/PaymentFailure";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +53,8 @@ const App = () => (
             <Route path="/terms" element={<TermsConditions />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/help" element={<Help />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-failure" element={<PaymentFailure />} />
 
             {/* Protected routes */}
             <Route path="/get-started" element={<ProtectedRoute><GetStarted /></ProtectedRoute>} />

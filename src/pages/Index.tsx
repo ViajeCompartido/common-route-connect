@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { isTripExpired } from '@/lib/tripUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import weegoLogo from '@/assets/weego-logo.png';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -77,8 +78,8 @@ const Index = () => {
       <div className="gradient-ocean px-4 pt-10 pb-8">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-1">
-            <Car className="h-7 w-7 text-accent" />
-            <h1 className="text-xl font-heading font-bold text-primary-foreground tracking-tight">ViajeCompartido</h1>
+            <img src={weegoLogo} alt="WEEGO" className="h-10 w-10 object-contain bg-primary-foreground rounded-lg p-1" />
+            <h1 className="text-xl font-heading font-bold text-primary-foreground tracking-tight">WEEGO</h1>
           </div>
           <p className="text-primary-foreground/70 text-sm mb-6 max-w-[320px]">
             Encontrá choferes y pasajeros compatibles con tu ruta. Viajá seguro, compartí gastos.

@@ -134,7 +134,7 @@ const MyTrips = () => {
     const actionKey = `pay-${bookingId}`;
     setActionLoading(actionKey);
     try {
-      const { data, error } = await supabase.functions.invoke('create-mp-preference', {
+      const { data, error } = await supabase.functions.invoke('create-payment', {
         body: { booking_id: bookingId },
       });
 

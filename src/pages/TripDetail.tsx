@@ -225,7 +225,7 @@ const TripDetail = () => {
     if (!bookingId || !trip) return;
     setPaymentLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-mp-preference', {
+      const { data, error } = await supabase.functions.invoke('create-payment', {
         body: { booking_id: bookingId },
       });
       if (error) throw error;

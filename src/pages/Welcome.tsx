@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { Car, Shield, Users, MapPin } from 'lucide-react';
+import { Shield, Users, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import weegoLogo from '@/assets/weego-logo.png';
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -11,11 +12,10 @@ const Welcome = () => {
       <div />
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center max-w-sm">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }} className="w-20 h-20 rounded-3xl gradient-accent flex items-center justify-center mx-auto mb-6 shadow-ocean">
-          <Car className="h-10 w-10 text-primary-foreground" />
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }} className="w-44 h-44 rounded-3xl bg-primary-foreground flex items-center justify-center mx-auto mb-6 shadow-ocean p-3">
+          <img src={weegoLogo} alt="WEEGO - Viajá Junto" className="w-full h-full object-contain" />
         </motion.div>
 
-        <h1 className="text-3xl font-heading font-bold text-primary-foreground mb-3">ViajeCompartido</h1>
         <p className="text-primary-foreground/90 text-base leading-relaxed mb-8">Encontrá choferes y pasajeros que van a donde vos vas. Compartí gastos, viajá seguro.</p>
 
         <div className="flex flex-wrap justify-center gap-2 mb-10">

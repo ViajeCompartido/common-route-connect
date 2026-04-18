@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Car, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import weegoLogo from '@/assets/weego-logo.png';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -63,9 +64,8 @@ const ResetPassword = () => {
     <div className="min-h-screen gradient-ocean flex flex-col">
       <div className="px-4 pt-8 pb-4">
         <div className="max-w-md mx-auto">
-          <div className="flex items-center gap-2 mb-1">
-            <Car className="h-6 w-6 text-accent" />
-            <span className="text-lg font-heading font-bold text-primary-foreground">ViajeCompartido</span>
+          <div className="flex flex-col items-center gap-2 mb-1">
+            <img src={weegoLogo} alt="WEEGO" className="h-20 w-20 object-contain bg-primary-foreground rounded-2xl p-2 shadow-ocean" />
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const faqs = [
-  { q: '¿Qué es ViajeCompartido?', a: 'Es una plataforma que conecta choferes y pasajeros que comparten rutas y horarios, para viajar juntos y compartir gastos de forma segura.' },
+  { q: '¿Qué es WEEGO?', a: 'Es una plataforma que conecta choferes y pasajeros que comparten rutas y horarios, para viajar juntos y compartir gastos de forma segura.' },
   { q: '¿Cómo funciona para pasajeros?', a: 'Buscás viajes compatibles con tu ruta y horario, enviás una solicitud al chofer, coordinás por chat y luego pagás. También podés publicar tu necesidad de viaje para que choferes compatibles te encuentren.' },
   { q: '¿Cómo funciona para choferes?', a: 'Activás tu perfil de chofer, publicás tus viajes indicando ruta, horario y precio, y recibís solicitudes de pasajeros. Vos decidís a quién aceptar.' },
   { q: '¿Es seguro?', a: 'Verificamos la identidad y datos de los choferes. Además, el sistema de reputación y calificaciones te ayuda a elegir con quién viajar.' },
@@ -12,7 +12,7 @@ const faqs = [
   { q: '¿Qué pasa si el chofer cancela?', a: 'Si el chofer cancela después de que pagaste, se gestiona el reembolso correspondiente. Las cancelaciones afectan la reputación del usuario.' },
   { q: '¿Puedo cancelar mi solicitud?', a: 'Sí, podés cancelar en cualquier momento antes del pago. Las cancelaciones reiteradas pueden afectar tu reputación.' },
   { q: '¿Cómo se paga?', a: 'El pago se habilita después de coordinar por chat con el chofer. Próximamente integraremos Mercado Pago para pagos seguros dentro de la plataforma.' },
-  { q: '¿Qué zonas cubre?', a: 'ViajeCompartido funciona en toda Argentina. El sistema busca coincidencias por zonas y barrios cercanos, sin importar la distancia del viaje.' },
+  { q: '¿Qué zonas cubre?', a: 'WEEGO funciona en toda Argentina. El sistema busca coincidencias por zonas y barrios cercanos, sin importar la distancia del viaje.' },
 ];
 
 const FAQ = () => {

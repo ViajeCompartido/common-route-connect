@@ -77,11 +77,11 @@ const Index = () => {
     <div className="min-h-screen pb-20">
       <div className="gradient-ocean px-4 pt-10 pb-8">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto">
-          <div className="flex items-center gap-2 mb-1">
-            <img src={weegoLogo} alt="WEEGO" className="h-10 w-10 object-contain bg-primary-foreground rounded-lg p-1" />
-            <h1 className="text-xl font-heading font-bold text-primary-foreground tracking-tight">WEEGO</h1>
+          <div className="flex flex-col items-center gap-2 mb-3">
+            <img src={weegoLogo} alt="WEEGO" className="h-20 w-20 object-contain bg-primary-foreground rounded-2xl p-2 shadow-ocean" />
+            <h1 className="text-3xl font-heading font-bold text-primary-foreground tracking-tight">WEEGO</h1>
           </div>
-          <p className="text-primary-foreground/70 text-sm mb-6 max-w-[320px]">
+          <p className="text-primary-foreground/70 text-sm mb-6 text-center max-w-[320px] mx-auto">
             Encontrá choferes y pasajeros compatibles con tu ruta. Viajá seguro, compartí gastos.
           </p>
           <div className="bg-card rounded-2xl p-5 shadow-ocean">

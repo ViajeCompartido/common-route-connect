@@ -116,7 +116,7 @@ const ActivateDriver = () => {
     <div className="min-h-screen bg-background">
       <div className="gradient-ocean px-4 pt-8 pb-6">
         <div className="max-w-md mx-auto">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70">
+          <button onClick={() => navigate('/get-started')} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70">
             <ArrowLeft className="h-4 w-4" /> Volver
           </button>
           <div className="flex items-center gap-2 mb-1">

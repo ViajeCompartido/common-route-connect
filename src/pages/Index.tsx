@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { isTripExpired } from '@/lib/tripUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import weegoLogo from '@/assets/weego-logo.png';
 
 const Index = () => {
   const navigate = useNavigate();

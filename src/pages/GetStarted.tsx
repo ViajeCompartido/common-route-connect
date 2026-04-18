@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Search, Hand, Car, ArrowRight, Sparkles } from 'lucide-react';
+import { Search, Hand, Car, ArrowRight, Sparkles, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const options = [
@@ -35,6 +35,12 @@ const GetStarted = () => {
   return (
     <div className="min-h-screen bg-background px-4 py-10">
       <div className="max-w-md mx-auto">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1 text-muted-foreground mb-4 text-sm active:opacity-70"
+        >
+          <ArrowLeft className="h-4 w-4" /> Volver al inicio
+        </button>
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -44,7 +50,7 @@ const GetStarted = () => {
             <Sparkles className="h-6 w-6 text-primary-foreground" />
           </div>
           <h1 className="text-xl font-heading font-bold mb-2">¿Qué querés hacer?</h1>
-          <p className="text-sm text-muted-foreground">Elegí cómo querés usar ViajeCompartido. Después podés cambiar cuando quieras.</p>
+          <p className="text-sm text-muted-foreground">Elegí cómo querés usar WEEGO. Después podés cambiar cuando quieras.</p>
         </motion.div>
 
         <div className="space-y-3">

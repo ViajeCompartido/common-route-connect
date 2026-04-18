@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Car, Mail } from 'lucide-react';
+import { ArrowLeft, Mail } from 'lucide-react';
+import weegoLogo from '@/assets/weego-logo.png';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -35,9 +36,8 @@ const ForgotPassword = () => {
           <button onClick={() => navigate('/login')} className="flex items-center gap-1 text-primary-foreground/70 mb-4 text-sm active:opacity-70">
             <ArrowLeft className="h-4 w-4" /> Volver al login
           </button>
-          <div className="flex items-center gap-2 mb-1">
-            <Car className="h-6 w-6 text-accent" />
-            <span className="text-lg font-heading font-bold text-primary-foreground">ViajeCompartido</span>
+          <div className="flex flex-col items-center gap-2 mb-1">
+            <img src={weegoLogo} alt="WEEGO" className="h-20 w-20 object-contain bg-primary-foreground rounded-2xl p-2 shadow-ocean" />
           </div>
         </div>
       </div>

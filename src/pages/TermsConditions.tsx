@@ -15,10 +15,10 @@ const TermsConditions = () => {
         <p className="text-muted-foreground text-xs mb-4">Última actualización: Abril 2026</p>
 
         <h2 className="text-base font-heading font-bold mt-4 mb-2">1. Aceptación de los términos</h2>
-        <p className="text-sm text-muted-foreground mb-3">Al registrarte y usar ViajeCompartido, aceptás estos términos y condiciones. Si no estás de acuerdo, no uses la plataforma.</p>
+        <p className="text-sm text-muted-foreground mb-3">Al registrarte y usar WEEGO, aceptás estos términos y condiciones. Si no estás de acuerdo, no uses la plataforma.</p>
 
         <h2 className="text-base font-heading font-bold mt-4 mb-2">2. Descripción del servicio</h2>
-        <p className="text-sm text-muted-foreground mb-3">ViajeCompartido es una plataforma que conecta choferes y pasajeros para compartir viajes. No somos una empresa de transporte ni un servicio de remis. Facilitamos la conexión entre usuarios que comparten rutas y horarios.</p>
+        <p className="text-sm text-muted-foreground mb-3">WEEGO es una plataforma que conecta choferes y pasajeros para compartir viajes. No somos una empresa de transporte ni un servicio de remis. Facilitamos la conexión entre usuarios que comparten rutas y horarios.</p>
 
         <h2 className="text-base font-heading font-bold mt-4 mb-2">3. Registro y cuenta</h2>
         <p className="text-sm text-muted-foreground mb-3">Para usar la plataforma debés crear una cuenta con información veraz y actualizada. Sos responsable de mantener la confidencialidad de tu contraseña y de toda actividad que ocurra bajo tu cuenta.</p>
@@ -36,7 +36,7 @@ const TermsConditions = () => {
         <p className="text-sm text-muted-foreground mb-3">Tanto choferes como pasajeros pueden cancelar viajes. Las cancelaciones reiteradas pueden afectar la reputación del usuario dentro de la plataforma.</p>
 
         <h2 className="text-base font-heading font-bold mt-4 mb-2">8. Limitación de responsabilidad</h2>
-        <p className="text-sm text-muted-foreground mb-3">ViajeCompartido actúa únicamente como intermediario. No nos hacemos responsables por accidentes, daños, pérdidas o cualquier incidente que ocurra durante los viajes compartidos.</p>
+        <p className="text-sm text-muted-foreground mb-3">WEEGO actúa únicamente como intermediario. No nos hacemos responsables por accidentes, daños, pérdidas o cualquier incidente que ocurra durante los viajes compartidos.</p>
 
         <h2 className="text-base font-heading font-bold mt-4 mb-2">9. Contacto</h2>
         <p className="text-sm text-muted-foreground mb-3">Para consultas sobre estos términos, contactanos a través de la sección de Ayuda dentro de la app.</p>

@@ -1,28 +1,15 @@
-import { Home, Search, PlusCircle, User, LayoutDashboard, ClipboardList, Hand, Users, Bell } from 'lucide-react';
+import { Home, Search, PlusCircle, User, ClipboardList } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useProfile } from '@/hooks/useProfile';
 
-const passengerNav = [
+const navItems = [
   { icon: Home, label: 'Inicio', path: '/' },
   { icon: Search, label: 'Buscar', path: '/search' },
-  { icon: Hand, label: 'Necesito', path: '/need-ride' },
+  { icon: PlusCircle, label: 'Publicar', path: '/publish-hub' },
   { icon: ClipboardList, label: 'Mis viajes', path: '/my-trips' },
-  { icon: User, label: 'Perfil', path: '/profile' },
-];
-
-const driverNav = [
-  { icon: Home, label: 'Inicio', path: '/' },
-  { icon: PlusCircle, label: 'Publicar', path: '/publish' },
-  { icon: Users, label: 'Pasajeros', path: '/compatible-passengers' },
-  { icon: Bell, label: 'Solicitudes', path: '/driver-requests' },
-  { icon: User, label: 'Perfil', path: '/profile' },
-];
-
-const adminNav = [
-  { icon: Home, label: 'Inicio', path: '/' },
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: User, label: 'Perfil', path: '/profile' },
 ];
 
@@ -30,14 +17,21 @@ interface BottomNavProps {
   role?: 'passenger' | 'driver' | 'admin';
 }
 
-const BottomNav = ({ role = 'passenger' }: BottomNavProps) => {
+const BottomNav = (_: BottomNavProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { totalUnread } = useUnreadMessages();
+  const { isDriver } = useProfile();
 
-  const navItems = role === 'admin' ? adminNav : role === 'driver' ? driverNav : passengerNav;
-  // Path that holds chats list per role
-  const chatHostPath = role === 'driver' ? '/driver-requests' : '/my-trips';
+  const chatHostPath = '/my-trips';
+
+  const handleNav = (path: string) => {
+    if (path === '/publish-hub') {
+      navigate(isDriver ? '/publish' : '/need-ride');
+      return;
+    }
+    navigate(path);
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border">

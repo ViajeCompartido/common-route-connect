@@ -306,10 +306,12 @@ const MyTrips = () => {
           <div className="text-center py-12"><p className="text-muted-foreground text-sm">Cargando...</p></div>
         ) : (
           <Tabs defaultValue="active">
-            <TabsList className={`grid w-full mb-4 ${isDriver ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <TabsTrigger value="active">Activos ({totalActive})</TabsTrigger>
-              <TabsTrigger value="history">Historial ({pastBookings.length + pastRequests.length})</TabsTrigger>
-              {isDriver && <TabsTrigger value="driver">Mis publicaciones ({activeDriverTrips.length})</TabsTrigger>}
+            <TabsList className={`grid w-full mb-4 ${isDriver ? 'grid-cols-5' : 'grid-cols-2'}`}>
+              <TabsTrigger value="active" className="text-[11px]">Activos ({totalActive})</TabsTrigger>
+              <TabsTrigger value="history" className="text-[11px]">Historial</TabsTrigger>
+              {isDriver && <TabsTrigger value="driver" className="text-[11px]">Publicados</TabsTrigger>}
+              {isDriver && <TabsTrigger value="requests" className="text-[11px]" onClick={(e) => { e.preventDefault(); navigate('/driver-requests'); }}>Solicitudes</TabsTrigger>}
+              {isDriver && <TabsTrigger value="passengers" className="text-[11px]" onClick={(e) => { e.preventDefault(); navigate('/compatible-passengers'); }}>Pasajeros</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="active" className="space-y-3">

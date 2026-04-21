@@ -79,6 +79,96 @@ export type Database = {
           },
         ]
       }
+      cancellation_policy: {
+        Row: {
+          active: boolean
+          applies_to_status: string
+          created_at: string
+          description: string | null
+          id: string
+          label: string
+          min_hours_before: number
+          refund_percentage: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          applies_to_status?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          label: string
+          min_hours_before: number
+          refund_percentage: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          applies_to_status?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          label?: string
+          min_hours_before?: number
+          refund_percentage?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cancellations: {
+        Row: {
+          booking_id: string
+          cancelled_by_role: string
+          cancelled_by_user_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          reason: string
+          reason_category: string | null
+          refund_amount: number
+          refund_percentage: number
+          refund_processed_at: string | null
+          refund_processed_by: string | null
+          refund_status: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          cancelled_by_role: string
+          cancelled_by_user_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason: string
+          reason_category?: string | null
+          refund_amount?: number
+          refund_percentage?: number
+          refund_processed_at?: string | null
+          refund_processed_by?: string | null
+          refund_status?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          cancelled_by_role?: string
+          cancelled_by_user_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          reason_category?: string | null
+          refund_amount?: number
+          refund_percentage?: number
+          refund_processed_at?: string | null
+          refund_processed_by?: string | null
+          refund_status?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       driver_profiles: {
         Row: {
           accepts_pets: boolean
@@ -506,6 +596,18 @@ export type Database = {
         Args: { _booking_id: string }
         Returns: number
       }
+      cancel_booking: {
+        Args: {
+          _booking_id: string
+          _reason: string
+          _reason_category?: string
+        }
+        Returns: Json
+      }
+      cancel_trip_as_driver: {
+        Args: { _reason: string; _trip_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -516,6 +618,10 @@ export type Database = {
       is_booking_participant: {
         Args: { _booking_id: string; _user_id: string }
         Returns: boolean
+      }
+      mark_refund_completed: {
+        Args: { _cancellation_id: string; _notes?: string }
+        Returns: undefined
       }
     }
     Enums: {

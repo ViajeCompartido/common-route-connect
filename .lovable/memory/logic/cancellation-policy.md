@@ -1,6 +1,6 @@
 ---
 name: Smart Cancellation Policy
-description: Refund rules based on booking status and time to departure, with driver progress tracking
+description: Refund rules, cancellation flow with reason capture, refund tracking and admin oversight
 type: feature
 ---
 
@@ -17,14 +17,35 @@ type: feature
 - **Driver arrived**: 10%
 - **In transit / completed**: 0% — cannot cancel
 
+## Driver Cancellation
+- Always 100% refund to passengers (`cancel_trip_as_driver` cancels all bookings)
+- Can affect driver reputation
+- Reason is mandatory
+
+## Reason Capture
+Passenger and driver each have predefined categories in `src/lib/cancellationReasons.ts` (editable). "Other" requires free-text. Reason stored in `bookings.cancellation_reason` and full record in `cancellations` table.
+
+## Refund States (`cancellations.refund_status`)
+- `not_applicable` (pre-payment)
+- `pending` (created, awaiting admin to process)
+- `processing`
+- `completed` (admin marked via `mark_refund_completed`)
+- `failed`
+
+## Editable Policy
+`cancellation_policy` table (admin-only edit) holds rule rows with `min_hours_before`, `refund_percentage`, `applies_to_status`. The DB function `calculate_refund_percentage` mirrors it for fast lookups.
+
 ## Driver Progress Buttons (in MyTrips driver tab)
-- "En camino" → sets trip to in_progress, bookings to driver_on_way
-- "Llegué" → sets bookings to driver_arrived
-- "Iniciar viaje" → sets bookings to in_transit
-- "Finalizar" → completes trip and all bookings
+- "En camino" → trip in_progress, bookings driver_on_way
+- "Llegué" → bookings driver_arrived
+- "Iniciar viaje" → bookings in_transit
+- "Finalizar" → trip + bookings completed
+- "Cancelar viaje" → opens reason dialog → calls `cancel_trip_as_driver`
 
-## DB Function
-`calculate_refund_percentage(_booking_id)` mirrors these rules server-side.
+## Admin
+`AdminCancellations` tab in admin panel: shows pending refunds, total refunded, full history with reasons. Admin clicks "Marcar reembolso realizado" to close the loop.
 
-## UI
-Cancel confirmation dialog shows refund percentage and explanation before confirming.
+## Key files
+- DB: `cancel_booking`, `cancel_trip_as_driver`, `mark_refund_completed`, `calculate_refund_percentage`
+- UI: `src/components/CancelBookingDialog.tsx`, `src/components/admin/AdminCancellations.tsx`
+- Logic: `src/lib/cancellationPolicy.ts`, `src/lib/cancellationReasons.ts`

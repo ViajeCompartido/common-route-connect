@@ -42,7 +42,10 @@ const DriverRequests = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) loadBookings();
+    if (user) {
+      loadBookings();
+      markRequestsSeen();
+    }
   }, [user]);
 
   const loadBookings = async () => {

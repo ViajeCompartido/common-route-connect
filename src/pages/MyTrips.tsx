@@ -529,7 +529,9 @@ const MyTrips = () => {
                                 </>
                               )}
                               {['active', 'paused', 'full'].includes(t.status) && (
-                                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'cancelled')}><Lock className="h-3 w-3" /> Cerrar</Button>
+                                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === t.id} onClick={() => setCancelTripConfirm(t)}>
+                                  <XCircle className="h-3 w-3" /> Cancelar viaje
+                                </Button>
                               )}
                             </div>
                           </div>

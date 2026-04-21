@@ -110,7 +110,20 @@ const Chat = () => {
       loadChat();
     }, 2500);
 
-    return () => window.clearInterval(interval);
+    // Re-marcar como visto cuando la pestaña vuelve a foco
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && bookingId) {
+        markBookingSeen(bookingId);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      // Al salir del chat, dejar marcado como leído
+      if (bookingId) markBookingSeen(bookingId);
+    };
   }, [bookingId, user?.id, phase]);
 
   // Marcar como visto cada vez que llegan mensajes nuevos mientras el chat está abierto

@@ -126,8 +126,15 @@ const Chat = () => {
 
   const handleSend = async (text?: string) => {
     if (!bookingId || !user) return;
-    const msg = text || newMsg.trim();
+    const msg = (text || newMsg).trim();
     if (!msg) return;
+
+    // Política de seguridad WEEGO: validar antes de enviar
+    const check = validateChatContent(msg);
+    if (!check.ok) {
+      toast.error(CHAT_POLICY_MESSAGE, { duration: 6000 });
+      return;
+    }
 
     setSending(true);
     const { error } = await supabase.from('messages').insert({

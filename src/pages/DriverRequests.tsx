@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { markRequestsSeen } from '@/hooks/useUnreadMessages';
 
 interface BookingWithDetails {
   id: string;
@@ -41,7 +42,10 @@ const DriverRequests = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) loadBookings();
+    if (user) {
+      loadBookings();
+      markRequestsSeen();
+    }
   }, [user]);
 
   const loadBookings = async () => {

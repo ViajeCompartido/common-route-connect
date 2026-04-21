@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getInitial } from '@/lib/avatarUtils';
 import { toast } from 'sonner';
 import { markBookingSeen } from '@/hooks/useUnreadMessages';
+import { validateChatContent, CHAT_POLICY_MESSAGE } from '@/lib/chatContentFilter';
 
 interface Message {
   id: string;
@@ -109,7 +110,20 @@ const Chat = () => {
       loadChat();
     }, 2500);
 
-    return () => window.clearInterval(interval);
+    // Re-marcar como visto cuando la pestaña vuelve a foco
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && bookingId) {
+        markBookingSeen(bookingId);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      // Al salir del chat, dejar marcado como leído
+      if (bookingId) markBookingSeen(bookingId);
+    };
   }, [bookingId, user?.id, phase]);
 
   // Marcar como visto cada vez que llegan mensajes nuevos mientras el chat está abierto
@@ -125,8 +139,15 @@ const Chat = () => {
 
   const handleSend = async (text?: string) => {
     if (!bookingId || !user) return;
-    const msg = text || newMsg.trim();
+    const msg = (text || newMsg).trim();
     if (!msg) return;
+
+    // Política de seguridad WEEGO: validar antes de enviar
+    const check = validateChatContent(msg);
+    if (!check.ok) {
+      toast.error(CHAT_POLICY_MESSAGE, { duration: 6000 });
+      return;
+    }
 
     setSending(true);
     const { error } = await supabase.from('messages').insert({

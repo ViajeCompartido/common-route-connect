@@ -20,8 +20,9 @@ import { useProfile } from '@/hooks/useProfile';
 import { isTripExpired } from '@/lib/tripUtils';
 import { normalizeLocation } from '@/lib/normalizeLocation';
 import { calculatePriceBreakdown } from '@/lib/tripUtils';
-import { getRefundInfo, CANCELLABLE_STATUSES } from '@/lib/cancellationPolicy';
+import { getRefundInfo, CANCELLABLE_STATUSES, type RefundInfo } from '@/lib/cancellationPolicy';
 import { formatPrice } from '@/lib/formatPrice';
+import CancelBookingDialog from '@/components/CancelBookingDialog';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;
@@ -79,7 +80,8 @@ const MyTrips = () => {
   const [rideRequests, setRideRequests] = useState<RideRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [cancelConfirm, setCancelConfirm] = useState<{ booking: BookingRow; refund: ReturnType<typeof getRefundInfo> } | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState<{ booking: BookingRow; refund: RefundInfo } | null>(null);
+  const [cancelTripConfirm, setCancelTripConfirm] = useState<TripRow | null>(null);
 
   // Edit dialogs
   const [editingTrip, setEditingTrip] = useState<TripRow | null>(null);
@@ -153,17 +155,39 @@ const MyTrips = () => {
     }
   };
 
-  const confirmCancelBooking = async () => {
+  const confirmCancelBooking = async (reason: string, category: string) => {
     if (!cancelConfirm) return;
     const id = cancelConfirm.booking.id;
     setActionLoading(id);
-    const { error } = await supabase.from('bookings').update({ status: 'cancelled_passenger' as any }).eq('id', id);
+    const { data, error } = await supabase.rpc('cancel_booking' as any, {
+      _booking_id: id,
+      _reason: reason,
+      _reason_category: category,
+    });
     setActionLoading(null);
+    if (error) { toast.error(error.message || 'Error al cancelar.'); return; }
     setCancelConfirm(null);
-    if (error) { toast.error('Error al cancelar.'); return; }
-    const pct = cancelConfirm.refund.percentage;
-    toast.success(pct === 100 ? 'Reserva cancelada. Reembolso completo.' : `Reserva cancelada. Reembolso del ${pct}%.`);
+    const result: any = data;
+    const pct = result?.refund_percentage ?? cancelConfirm.refund.percentage;
+    const amount = result?.refund_amount ? formatPrice(Number(result.refund_amount)) : null;
+    if (pct === 100) toast.success('Reserva cancelada. Reembolso completo.');
+    else if (pct > 0) toast.success(`Reserva cancelada. Reembolso del ${pct}%${amount ? ` (${amount})` : ''}. Quedará pendiente hasta procesarse.`);
+    else toast.success('Reserva cancelada. Sin reembolso aplicable.');
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled_passenger' } : b));
+  };
+
+  const confirmCancelTripAsDriver = async (reason: string, _category: string) => {
+    if (!cancelTripConfirm) return;
+    const tripId = cancelTripConfirm.id;
+    setActionLoading(tripId);
+    const { error } = await supabase.rpc('cancel_trip_as_driver' as any, {
+      _trip_id: tripId, _reason: reason,
+    });
+    setActionLoading(null);
+    if (error) { toast.error(error.message || 'Error al cancelar el viaje.'); return; }
+    setCancelTripConfirm(null);
+    toast.success('Viaje cancelado. Los pasajeros recibirán reembolso del 100%.');
+    setDriverTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: 'cancelled' } : t));
   };
 
   const handleTripAction = async (tripId: string, newStatus: string) => {

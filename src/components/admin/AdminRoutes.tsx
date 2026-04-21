@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateServiceFee } from '@/lib/tripUtils';
+import { normalizeRouteKey } from '@/lib/normalizeCityName';
 
 interface RouteRow {
   route: string;
@@ -24,21 +25,20 @@ const AdminRoutes = () => {
     ]);
 
     const tripMap = Object.fromEntries((trips ?? []).map(t => [t.id, t]));
-
     const routeData: Record<string, { count: number; revenue: number }> = {};
 
-    // Count all trips per route
+    // Conteo de viajes por ruta normalizada
     (trips ?? []).forEach(t => {
-      const key = `${t.origin} → ${t.destination}`;
+      const key = normalizeRouteKey(t.origin, t.destination);
       if (!routeData[key]) routeData[key] = { count: 0, revenue: 0 };
       routeData[key].count++;
     });
 
-    // Sum revenue from bookings
+    // Suma de ingresos
     (bookings ?? []).forEach(b => {
       const trip = tripMap[b.trip_id];
       if (!trip) return;
-      const key = `${trip.origin} → ${trip.destination}`;
+      const key = normalizeRouteKey(trip.origin, trip.destination);
       if (!routeData[key]) routeData[key] = { count: 0, revenue: 0 };
       const subtotal = Number(b.price_per_seat) * b.seats + (Number(b.pet_surcharge) || 0);
       routeData[key].revenue += subtotal + calculateServiceFee(subtotal);
@@ -47,7 +47,7 @@ const AdminRoutes = () => {
     const sorted = Object.entries(routeData)
       .sort((a, b) => b[1].count - a[1].count)
       .slice(0, 10)
-      .map(([route, data]) => ({ route, ...data }));
+      .map(([route, d]) => ({ route, ...d }));
 
     setRoutes(sorted);
     setLoading(false);
@@ -57,9 +57,12 @@ const AdminRoutes = () => {
 
   return (
     <Card className="p-4">
-      <h3 className="text-sm font-heading font-semibold mb-4 flex items-center gap-2">
-        <MapPin className="h-4 w-4 text-primary" /> Top 10 Rutas más frecuentes
+      <h3 className="text-sm font-heading font-semibold mb-1 flex items-center gap-2">
+        <MapPin className="h-4 w-4 text-primary" /> Top 10 rutas más frecuentes
       </h3>
+      <p className="text-[10px] text-muted-foreground mb-4">
+        Las variantes (ej. “Monte Hermoso playa”) se agrupan bajo la ciudad base.
+      </p>
       {routes.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-8">Sin datos de rutas aún</p>
       ) : (
@@ -70,9 +73,9 @@ const AdminRoutes = () => {
             return (
               <div key={r.route} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground flex items-center gap-1.5">
-                    <span className="font-bold text-foreground w-5">{i + 1}.</span>
-                    {r.route}
+                  <span className="text-muted-foreground flex items-center gap-1.5 min-w-0">
+                    <span className="font-bold text-foreground w-5 shrink-0">{i + 1}.</span>
+                    <span className="truncate">{r.route}</span>
                   </span>
                   <div className="flex gap-3 text-right shrink-0">
                     <span className="font-bold">{r.count} viajes</span>

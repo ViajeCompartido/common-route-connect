@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Car, Search, Hand, ArrowRight } from 'lucide-react';
+import { Car, Search, Hand, ArrowRight, ShieldCheck } from 'lucide-react';
 import SearchForm from '@/components/SearchForm';
 import TripCard from '@/components/TripCard';
 import BottomNav from '@/components/BottomNav';
@@ -19,7 +19,7 @@ import weegoLogo from '@/assets/weego-logo.png';
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isDriver } = useProfile();
+  const { isDriver, isAdmin } = useProfile();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [rideRequests, setRideRequests] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,6 +146,16 @@ const Index = () => {
           </div>
         )}
       </div>
+
+      {isAdmin && (
+        <button
+          onClick={() => navigate('/admin')}
+          className="fixed bottom-24 right-4 z-40 gradient-accent text-primary-foreground shadow-ocean rounded-full h-12 w-12 flex items-center justify-center active:scale-95 transition-transform"
+          aria-label="Panel admin"
+        >
+          <ShieldCheck className="h-5 w-5" />
+        </button>
+      )}
 
       <BottomNav role="passenger" />
     </div>

@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getInitial } from '@/lib/avatarUtils';
 import { toast } from 'sonner';
 import { markBookingSeen } from '@/hooks/useUnreadMessages';
+import { validateChatContent, CHAT_POLICY_MESSAGE } from '@/lib/chatContentFilter';
 
 interface Message {
   id: string;

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 const LAST_SEEN_KEY = 'chat_last_seen';
+const REQUESTS_SEEN_KEY = 'requests_last_seen';
 
 type LastSeenMap = Record<string, string>;
 
@@ -20,6 +21,16 @@ export function markBookingSeen(bookingId: string) {
   map[bookingId] = new Date().toISOString();
   localStorage.setItem(LAST_SEEN_KEY, JSON.stringify(map));
   window.dispatchEvent(new Event('chat-seen-updated'));
+}
+
+/** Marca todas las solicitudes (booking requests) actuales como vistas para este usuario. */
+export function markRequestsSeen() {
+  localStorage.setItem(REQUESTS_SEEN_KEY, new Date().toISOString());
+  window.dispatchEvent(new Event('requests-seen-updated'));
+}
+
+export function getRequestsLastSeen(): string {
+  return localStorage.getItem(REQUESTS_SEEN_KEY) || new Date(0).toISOString();
 }
 
 interface UnreadInfo {

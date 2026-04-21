@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, MapPin, BarChart3, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, DollarSign, MapPin, BarChart3, ShieldAlert, Users } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import BottomNav from '@/components/BottomNav';
 import AdminFinance from '@/components/admin/AdminFinance';
 import AdminRoutes from '@/components/admin/AdminRoutes';
 import AdminStats from '@/components/admin/AdminStats';
+import AdminUsers from '@/components/admin/AdminUsers';
 import { useProfile } from '@/hooks/useProfile';
 
 const AdminDashboard = () => {
@@ -43,14 +44,17 @@ const AdminDashboard = () => {
 
       <div className="max-w-lg mx-auto px-4 py-4">
         <Tabs defaultValue="finance">
-          <TabsList className="w-full grid grid-cols-3 h-auto bg-muted/50 p-1">
-            <TabsTrigger value="finance" className="text-xs gap-1 px-2 py-2">
+          <TabsList className="w-full grid grid-cols-4 h-auto bg-muted/50 p-1">
+            <TabsTrigger value="finance" className="text-[11px] gap-1 px-1 py-2">
               <DollarSign className="h-3.5 w-3.5" /> Finanzas
             </TabsTrigger>
-            <TabsTrigger value="routes" className="text-xs gap-1 px-2 py-2">
+            <TabsTrigger value="routes" className="text-[11px] gap-1 px-1 py-2">
               <MapPin className="h-3.5 w-3.5" /> Rutas
             </TabsTrigger>
-            <TabsTrigger value="metrics" className="text-xs gap-1 px-2 py-2">
+            <TabsTrigger value="users" className="text-[11px] gap-1 px-1 py-2">
+              <Users className="h-3.5 w-3.5" /> Usuarios
+            </TabsTrigger>
+            <TabsTrigger value="metrics" className="text-[11px] gap-1 px-1 py-2">
               <BarChart3 className="h-3.5 w-3.5" /> Métricas
             </TabsTrigger>
           </TabsList>
@@ -58,6 +62,7 @@ const AdminDashboard = () => {
           <div className="mt-4">
             <TabsContent value="finance"><AdminFinance /></TabsContent>
             <TabsContent value="routes"><AdminRoutes /></TabsContent>
+            <TabsContent value="users"><AdminUsers /></TabsContent>
             <TabsContent value="metrics"><AdminStats /></TabsContent>
           </div>
         </Tabs>

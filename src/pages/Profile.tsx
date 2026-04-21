@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Calendar, Settings, LogOut, BadgeCheck, Car, Shield, Clock, XCircle, PawPrint, MapPin, Edit, Plus } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Calendar, Settings, LogOut, BadgeCheck, Car, Shield, Clock, XCircle, PawPrint, MapPin, Edit, Plus, ShieldCheck } from 'lucide-react';
 import { getInitial } from '@/lib/avatarUtils';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
@@ -28,7 +28,7 @@ const PET_SIZE_LABELS: Record<string, string> = {
 const Profile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { profile, driverProfile, isDriver, loading } = useProfile();
+  const { profile, driverProfile, isDriver, isAdmin, loading } = useProfile();
   const [reviews, setReviews] = useState<ReviewData[]>([]);
 
   useEffect(() => {
@@ -221,6 +221,11 @@ const Profile = () => {
         )}
 
         <div className="space-y-2 pt-1">
+          {isAdmin && (
+            <Button variant="outline" className="w-full h-12 gap-2 rounded-xl border-accent/40 text-accent hover:text-accent" onClick={() => navigate('/admin')}>
+              <ShieldCheck className="h-4 w-4" /> Panel admin
+            </Button>
+          )}
           <Button variant="outline" className="w-full h-12 gap-2 rounded-xl" onClick={() => navigate('/settings')}>
             <Settings className="h-4 w-4" /> Configuración
           </Button>

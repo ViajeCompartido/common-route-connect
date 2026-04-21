@@ -33,21 +33,24 @@ export function useProfile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [driverProfile, setDriverProfile] = useState<DriverProfileData | null>(null);
   const [isDriver, setIsDriver] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
 
-    const [{ data: profileData }, { data: driverData }, { data: roleData }] = await Promise.all([
+    const [{ data: profileData }, { data: driverData }, { data: roles }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
       supabase.from('driver_profiles').select('vehicle, plate, max_seats, accepts_pets, pet_sizes_accepted, license_url, license_verified').eq('user_id', user.id).maybeSingle(),
-      supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'driver').maybeSingle(),
+      supabase.from('user_roles').select('role').eq('user_id', user.id),
     ]);
 
     if (profileData) setProfile(profileData as ProfileData);
     if (driverData) setDriverProfile(driverData as DriverProfileData);
-    setIsDriver(!!roleData);
+    const roleList = (roles ?? []).map(r => r.role);
+    setIsDriver(roleList.includes('driver'));
+    setIsAdmin(roleList.includes('admin'));
     setLoading(false);
   };
 
@@ -62,7 +65,7 @@ export function useProfile() {
     : false;
 
   return {
-    profile, driverProfile, isDriver, loading,
+    profile, driverProfile, isDriver, isAdmin, loading,
     isProfileComplete, isDriverProfileComplete,
     reload: loadProfile,
   };

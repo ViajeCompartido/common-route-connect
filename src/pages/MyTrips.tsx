@@ -352,7 +352,7 @@ const MyTrips = () => {
         {loading ? (
           <div className="text-center py-12"><p className="text-muted-foreground text-sm">Cargando...</p></div>
         ) : (
-          <Tabs defaultValue="active">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'history' | 'driver')}>
             <TabsList className={`grid w-full mb-4 ${isDriver ? 'grid-cols-5' : 'grid-cols-2'}`}>
               <TabsTrigger value="active" className="text-[11px]">Activos ({totalActive})</TabsTrigger>
               <TabsTrigger value="history" className="text-[11px]">Historial</TabsTrigger>

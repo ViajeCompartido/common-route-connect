@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { normalizeLocation } from '@/lib/normalizeLocation';
+import { isTripCreationValid } from '@/lib/tripUtils';
 
 const PET_SIZES = [
   { value: 'small', label: 'Chica' },
@@ -43,9 +44,13 @@ const NeedRide = () => {
     e.preventDefault();
     if (!user) { toast.error('Tenés que iniciar sesión primero.'); return; }
     if (form.hasPet && !form.petSize) { toast.error('Indicá el tamaño de tu mascota.'); return; }
+    if (!isTripCreationValid(form.date, form.time)) {
+      toast.error('La fecha y hora de la solicitud tienen que ser futuras para que permanezca visible.');
+      return;
+    }
 
     setLoading(true);
-    const { error } = await supabase.from('ride_requests').insert({
+    const { data, error } = await supabase.from('ride_requests').insert({
       passenger_id: user.id,
       origin: normalizeLocation(form.origin),
       destination: normalizeLocation(form.destination),
@@ -57,12 +62,16 @@ const NeedRide = () => {
       has_luggage: form.hasLuggage,
       message: form.message || null,
       status: 'active',
-    });
+    }).select('id, status').single();
     setLoading(false);
 
     if (error) { toast.error('No pudimos publicar tu necesidad. Intentá de nuevo.'); console.error(error); return; }
+    if (!data?.id || data.status !== 'active') {
+      toast.error('La solicitud se creó con un estado inesperado. Revisala en Mis viajes.');
+      return;
+    }
     toast.success('¡Listo! Tu búsqueda está publicada.');
-    navigate('/my-trips');
+    navigate('/my-trips', { state: { highlightRequestId: data.id } });
   };
 
   if (profileLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground text-sm">Cargando...</p></div>;

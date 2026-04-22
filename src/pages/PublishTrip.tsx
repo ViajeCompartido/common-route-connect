@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { Checkbox } from '@/components/ui/checkbox';
+import { isTripCreationValid } from '@/lib/tripUtils';
 
 const PET_SIZES = [
   { value: 'small', label: 'Chica' },
@@ -89,6 +90,10 @@ const PublishTrip = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isTripCreationValid(form.date, form.time)) {
+      toast.error('La fecha y hora del viaje tienen que ser futuras para que permanezca visible.');
+      return;
+    }
     if (priceWarning) {
       toast.error(`El precio supera el máximo permitido para esta ruta ($${matchedRoute!.max.toLocaleString()}).`);
       return;
@@ -108,7 +113,7 @@ const PublishTrip = () => {
 
     setLoading(true);
     const totalSeats = parseInt(form.totalSeats);
-    const { error } = await supabase.from('trips').insert({
+    const { data, error } = await supabase.from('trips').insert({
       driver_id: user.id,
       origin: normalizeLocation(form.origin),
       destination: normalizeLocation(form.destination),
@@ -123,7 +128,7 @@ const PublishTrip = () => {
       allows_luggage: form.allowsLuggage,
       observations: form.observations || null,
       status: 'active',
-    });
+    }).select('id, status').single();
 
     // Also update driver profile with pet preferences
     if (driverProfile) {
@@ -140,8 +145,12 @@ const PublishTrip = () => {
       console.error(error);
       return;
     }
+    if (!data?.id || data.status !== 'active') {
+      toast.error('El viaje se creó con un estado inesperado. Revisalo en Mis viajes.');
+      return;
+    }
     toast.success('¡Listo! Tu viaje ya está publicado.');
-    navigate('/');
+    navigate('/my-trips', { state: { highlightTripId: data.id } });
   };
 
   if (profileLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground text-sm">Cargando...</p></div>;

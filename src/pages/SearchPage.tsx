@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import SearchForm, { SearchFilters } from '@/components/SearchForm';
 import TripCard from '@/components/TripCard';
 import BottomNav from '@/components/BottomNav';
@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 interface ScoredTrip {
   trip: Trip;
@@ -36,7 +37,42 @@ const SearchPage = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadAll(); }, []);
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+
+    const [tripsRes, reqsRes] = await Promise.all([
+      supabase.from('trips').select('*').in('status', ['active']).gt('available_seats', 0).order('date', { ascending: true }),
+      supabase.from('ride_requests').select('*').eq('status', 'active').order('created_at', { ascending: false }),
+    ]);
+
+    const trips = (tripsRes.data ?? []).filter(t => !isTripExpired(t.date, t.time));
+    const reqs = (reqsRes.data ?? []).filter(r => !isTripExpired(r.date, r.time));
+
+    const driverIds = [...new Set(trips.map(t => t.driver_id))];
+    const passengerIds = [...new Set(reqs.map(r => r.passenger_id))];
+    const allIds = [...new Set([...driverIds, ...passengerIds])];
+
+    const { data: profiles } = allIds.length > 0
+      ? await supabase.from('profiles').select('id, first_name, last_name, average_rating, total_trips, verified').in('id', allIds)
+      : { data: [] };
+    const pm = new Map((profiles ?? []).map(p => [p.id, p]));
+
+    const mappedTrips = trips.map(t => mapTrip(t, pm.get(t.driver_id)));
+    const mappedReqs = reqs.map(r => mapRideRequest(r, pm.get(r.passenger_id)));
+
+    setDriverResults(mappedTrips.map(trip => ({ trip, match: defaultMatch(trip.id), type: 'driver' as const })));
+    setPassengerResults(mappedReqs.map(trip => ({ trip, match: defaultMatch(trip.id), type: 'passenger' as const })));
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { void loadAll(); }, [loadAll]);
+
+  useRealtimeRefresh({
+    enabled: !hasSearched,
+    tables: ['trips', 'ride_requests'],
+    onChange: loadAll,
+    channelName: 'search-listings-refresh',
+  });
 
   const mapTrip = (t: any, profile: any): Trip => ({
     id: t.id, driverId: t.driver_id, driverName: profile ? `${profile.first_name} ${profile.last_name}`.trim() || 'Chofer' : 'Chofer',
@@ -61,33 +97,6 @@ const SearchPage = () => {
     originMatch: { match: true, score: 1, label: '' }, destinationMatch: { match: true, score: 1, label: '' },
     timeMatch: { match: true, diffMinutes: 0, label: '' }, dateMatch: { match: true, label: '' }, compatibilityLabel: '',
   });
-
-  const loadAll = async () => {
-    setLoading(true);
-    const [tripsRes, reqsRes] = await Promise.all([
-      supabase.from('trips').select('*').in('status', ['active']).gt('available_seats', 0).order('date', { ascending: true }),
-      supabase.from('ride_requests').select('*').eq('status', 'active').order('created_at', { ascending: false }),
-    ]);
-
-    const trips = (tripsRes.data ?? []).filter(t => !isTripExpired(t.date, t.time));
-    const reqs = (reqsRes.data ?? []).filter(r => !isTripExpired(r.date, r.time));
-
-    const driverIds = [...new Set(trips.map(t => t.driver_id))];
-    const passengerIds = [...new Set(reqs.map(r => r.passenger_id))];
-    const allIds = [...new Set([...driverIds, ...passengerIds])];
-
-    const { data: profiles } = allIds.length > 0
-      ? await supabase.from('profiles').select('id, first_name, last_name, average_rating, total_trips, verified').in('id', allIds)
-      : { data: [] };
-    const pm = new Map((profiles ?? []).map(p => [p.id, p]));
-
-    const mappedTrips = trips.map(t => mapTrip(t, pm.get(t.driver_id)));
-    const mappedReqs = reqs.map(r => mapRideRequest(r, pm.get(r.passenger_id)));
-
-    setDriverResults(mappedTrips.map(trip => ({ trip, match: defaultMatch(trip.id), type: 'driver' as const })));
-    setPassengerResults(mappedReqs.map(trip => ({ trip, match: defaultMatch(trip.id), type: 'passenger' as const })));
-    setLoading(false);
-  };
 
   const handleSearch = async (filters: SearchFilters) => {
     setHasSearched(true);

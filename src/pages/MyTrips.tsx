@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil, AlertTriangle, Car, MapPinCheck, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ import { calculatePriceBreakdown } from '@/lib/tripUtils';
 import { getRefundInfo, CANCELLABLE_STATUSES, type RefundInfo } from '@/lib/cancellationPolicy';
 import { formatPrice } from '@/lib/formatPrice';
 import CancelBookingDialog from '@/components/CancelBookingDialog';
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;
@@ -73,6 +74,7 @@ const tripStatusConfig: Record<string, { label: string; color: string }> = {
 
 const MyTrips = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { isDriver } = useProfile();
   const [bookings, setBookings] = useState<BookingRow[]>([]);
@@ -88,10 +90,9 @@ const MyTrips = () => {
   const [editingRequest, setEditingRequest] = useState<RideRequestRow | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [editSaving, setEditSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'active' | 'history' | 'driver'>('active');
 
-  useEffect(() => { if (user) loadData(); }, [user]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
@@ -121,7 +122,29 @@ const MyTrips = () => {
     setDriverTrips((tripsRes.data ?? []) as TripRow[]);
     setRideRequests((requestsRes.data ?? []) as RideRequestRow[]);
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => { if (user) void loadData(); }, [user, loadData]);
+
+  useEffect(() => {
+    const state = location.state as { highlightTripId?: string; highlightRequestId?: string } | null;
+    if (state?.highlightTripId && isDriver) {
+      setActiveTab('driver');
+      window.history.replaceState({}, document.title);
+      return;
+    }
+    if (state?.highlightRequestId) {
+      setActiveTab('active');
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, isDriver]);
+
+  useRealtimeRefresh({
+    enabled: !!user,
+    tables: ['bookings', 'trips', 'ride_requests', 'payments'],
+    onChange: loadData,
+    channelName: `my-trips-refresh-${user?.id ?? 'anon'}`,
+  });
 
   const promptCancelBooking = (b: BookingRow) => {
     const refund = getRefundInfo(b.status, b.date, b.time);

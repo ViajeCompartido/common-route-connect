@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Car, Search, Hand, ArrowRight, ShieldCheck } from 'lucide-react';
 import SearchForm from '@/components/SearchForm';
@@ -15,6 +15,7 @@ import { isTripExpired } from '@/lib/tripUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import weegoLogo from '@/assets/weego-logo.png';
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -24,9 +25,8 @@ const Index = () => {
   const [rideRequests, setRideRequests] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadData(); }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    setLoading(true);
     const [tripsRes, requestsRes] = await Promise.all([
       supabase.from('trips').select('*').eq('status', 'active').gt('available_seats', 0).order('date', { ascending: true }).limit(3),
       supabase.from('ride_requests').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(3),
@@ -71,7 +71,16 @@ const Index = () => {
       };
     }));
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => { void loadData(); }, [loadData]);
+
+  useRealtimeRefresh({
+    enabled: true,
+    tables: ['trips', 'ride_requests'],
+    onChange: loadData,
+    channelName: 'home-listings-refresh',
+  });
 
   return (
     <div className="min-h-screen pb-20">

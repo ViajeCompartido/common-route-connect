@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import weegoLogo from '@/assets/weego-logo.png';
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
+import { getSeatSummary } from '@/lib/seatUtils';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -47,12 +48,13 @@ const Index = () => {
 
     setTrips(tripsData.map(t => {
       const p = profileMap.get(t.driver_id);
+      const summary = getSeatSummary(t.total_seats, t.available_seats);
       return {
         id: t.id, driverId: t.driver_id,
         driverName: p ? `${p.first_name} ${p.last_name}`.trim() || 'Chofer' : 'Chofer',
         driverRating: p?.average_rating ?? 0, driverTotalTrips: p?.total_trips ?? 0, driverVerified: p?.verified ?? false,
         origin: t.origin, destination: t.destination, zone: t.zone, meetingPoint: t.meeting_point,
-        date: t.date, time: t.time, availableSeats: t.available_seats, totalSeats: t.total_seats,
+        date: t.date, time: t.time, availableSeats: summary.availableSeats, totalSeats: summary.totalSeats,
         pricePerSeat: Number(t.price_per_seat), acceptsPets: t.accepts_pets, hasPet: t.has_pet,
         allowsLuggage: t.allows_luggage, observations: t.observations, status: t.status,
       };

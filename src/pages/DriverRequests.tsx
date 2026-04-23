@@ -106,21 +106,6 @@ const DriverRequests = () => {
       return;
     }
 
-    // Decrement available seats on the trip
-    const { data: tripData } = await supabase
-      .from('trips')
-      .select('available_seats')
-      .eq('id', booking.trip_id)
-      .single();
-
-    if (tripData) {
-      const newSeats = Math.max(0, tripData.available_seats - booking.seats);
-      const updates: any = { available_seats: newSeats };
-      if (newSeats === 0) updates.status = 'full';
-
-      await supabase.from('trips').update(updates).eq('id', booking.trip_id);
-    }
-
     const { error: messageError } = await supabase.from('messages').insert({
       booking_id: booking.id,
       sender_id: user.id,

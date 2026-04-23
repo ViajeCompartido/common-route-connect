@@ -512,6 +512,7 @@ export type Database = {
           id: string
           meeting_point: string | null
           observations: string | null
+          occupied_seats: number
           origin: string
           pet_size: string | null
           price_per_seat: number
@@ -533,6 +534,7 @@ export type Database = {
           id?: string
           meeting_point?: string | null
           observations?: string | null
+          occupied_seats?: number
           origin: string
           pet_size?: string | null
           price_per_seat: number
@@ -554,6 +556,7 @@ export type Database = {
           id?: string
           meeting_point?: string | null
           observations?: string | null
+          occupied_seats?: number
           origin?: string
           pet_size?: string | null
           price_per_seat?: number
@@ -592,6 +595,10 @@ export type Database = {
     }
     Functions: {
       add_driver_role: { Args: never; Returns: undefined }
+      booking_occupies_seat: {
+        Args: { _status: Database["public"]["Enums"]["booking_status"] }
+        Returns: boolean
+      }
       calculate_refund_percentage: {
         Args: { _booking_id: string }
         Returns: number
@@ -621,6 +628,10 @@ export type Database = {
       }
       mark_refund_completed: {
         Args: { _cancellation_id: string; _notes?: string }
+        Returns: undefined
+      }
+      sync_trip_seat_counters: {
+        Args: { _trip_id: string }
         Returns: undefined
       }
     }

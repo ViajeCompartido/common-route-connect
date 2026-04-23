@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { calculatePriceBreakdown } from '@/lib/tripUtils';
 import { formatPrice } from '@/lib/formatPrice';
+import { getSeatSummary } from '@/lib/seatUtils';
 
 type BookingStep = 'none' | 'pending' | 'accepted' | 'coordinating' | 'confirmed' | 'paid';
 
@@ -156,6 +157,7 @@ const TripDetail = () => {
   const bookedBreakdown = existingBooking
     ? calculatePriceBreakdown(Number(existingBooking.price_per_seat), existingBooking.seats, Number(existingBooking.pet_surcharge) || 0)
     : null;
+  const seatSummary = trip ? getSeatSummary(trip.total_seats, trip.available_seats) : null;
 
   const handleRequestSeat = async () => {
     if (!user || !trip) return;
@@ -176,6 +178,10 @@ const TripDetail = () => {
     }
     if (reqHasPet && reqPetSize && driverPetSizes.length > 0 && !driverPetSizes.includes(reqPetSize)) {
       toast.error(`Este chofer no acepta mascotas de tamaño ${PET_SIZE_LABELS[reqPetSize]?.toLowerCase()}.`);
+      return;
+    }
+    if (reqSeats < 1 || reqSeats > trip.available_seats) {
+      toast.error('La cantidad de asientos solicitados no está disponible.');
       return;
     }
 
@@ -289,6 +295,23 @@ const TripDetail = () => {
               <div className="flex items-center gap-1.5"><Clock className="h-4 w-4" /><span>{trip.date} · {trip.time}hs</span></div>
               <div className="flex items-center gap-1.5"><Users className="h-4 w-4" /><span className="font-medium">{trip.available_seats} de {trip.total_seats} lugares libres</span></div>
             </div>
+
+            {seatSummary && (
+              <div className="grid grid-cols-3 gap-2 pt-2">
+                <div className="rounded-xl border border-border bg-secondary/40 px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground">Totales</p>
+                  <p className="text-sm font-heading font-bold">{seatSummary.totalSeats}</p>
+                </div>
+                <div className="rounded-xl border border-border bg-secondary/40 px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground">Ocupados</p>
+                  <p className="text-sm font-heading font-bold">{seatSummary.occupiedSeats}</p>
+                </div>
+                <div className="rounded-xl border border-border bg-secondary/40 px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground">Disponibles</p>
+                  <p className="text-sm font-heading font-bold">{seatSummary.availableSeats}</p>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2 flex-wrap pt-2">
               {trip.accepts_pets && (

@@ -24,6 +24,7 @@ import { getRefundInfo, CANCELLABLE_STATUSES, type RefundInfo } from '@/lib/canc
 import { formatPrice } from '@/lib/formatPrice';
 import CancelBookingDialog from '@/components/CancelBookingDialog';
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
+import { clampSeatCount, getSeatSummary, MAX_DRIVER_VEHICLE_SEATS } from '@/lib/seatUtils';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;
@@ -263,12 +264,18 @@ const MyTrips = () => {
 
   const saveEditTrip = async () => {
     if (!editingTrip) return;
+    const totalSeats = clampSeatCount(editForm.total_seats ?? editingTrip.total_seats, 1, MAX_DRIVER_VEHICLE_SEATS, editingTrip.total_seats);
+    const occupiedSeats = getSeatSummary(editingTrip.total_seats, editingTrip.available_seats).occupiedSeats;
+    if (totalSeats < occupiedSeats) {
+      toast.error(`No podés bajar de ${occupiedSeats} asientos porque ya están ocupados.`);
+      return;
+    }
     setEditSaving(true);
     const { error } = await supabase.from('trips').update({
       origin: normalizeLocation(editForm.origin),
       destination: normalizeLocation(editForm.destination),
       date: editForm.date, time: editForm.time,
-      available_seats: parseInt(editForm.available_seats),
+      total_seats: totalSeats,
       price_per_seat: parseInt(editForm.price_per_seat),
       accepts_pets: editForm.accepts_pets,
       allows_luggage: editForm.allows_luggage,
@@ -513,8 +520,10 @@ const MyTrips = () => {
                                 <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${ts.color}`}>{ts.label}</Badge>
                               </div>
                             </div>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                              <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {t.available_seats}/{t.total_seats} lugares</span>
+                            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mb-3">
+                              <span className="flex items-center gap-1"><Users className="h-3 w-3" /> Totales: {t.total_seats}</span>
+                              <span>Ocupados: {getSeatSummary(t.total_seats, t.available_seats).occupiedSeats}</span>
+                              <span>Disponibles: {t.available_seats}</span>
                               <span className="font-heading font-bold text-primary">{formatPrice(Number(t.price_per_seat))}/asiento</span>
                             </div>
                             <div className="flex gap-2 flex-wrap">
@@ -613,8 +622,8 @@ const MyTrips = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Lugares disponibles</Label>
-                <Input type="number" min={0} value={editForm.available_seats ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, available_seats: e.target.value }))} className="h-10 rounded-xl" />
+                <Label className="text-xs text-muted-foreground mb-1 block">Asientos totales</Label>
+                <Input type="number" min={1} max={MAX_DRIVER_VEHICLE_SEATS} step={1} value={editForm.total_seats ?? editingTrip?.total_seats ?? ''} onChange={e => setEditForm((f: any) => ({ ...f, total_seats: e.target.value }))} className="h-10 rounded-xl" />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground mb-1 block">Precio por asiento</Label>

@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { clampSeatCount, MAX_DRIVER_VEHICLE_SEATS } from '@/lib/seatUtils';
 
 const PET_SIZES = [
   { value: 'small', label: 'Chica' },
@@ -63,6 +64,8 @@ const ActivateDriver = () => {
       return;
     }
 
+    const maxSeats = clampSeatCount(form.maxSeats, 1, MAX_DRIVER_VEHICLE_SEATS, 4);
+
     setIsLoading(true);
 
     const fileExt = licenseFile.name.split('.').pop();
@@ -83,7 +86,7 @@ const ActivateDriver = () => {
       vehicle: form.vehicle,
       plate: form.plate.toUpperCase(),
       color: form.color || null,
-      max_seats: parseInt(form.maxSeats),
+      max_seats: maxSeats,
       accepts_pets: form.acceptsPets,
       pet_sizes_accepted: form.petSizesAccepted,
       license_url: filePath,
@@ -158,7 +161,7 @@ const ActivateDriver = () => {
               <Label className="text-[10px] text-muted-foreground mb-1 block">Asientos máximos del vehículo</Label>
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="number" min="1" max="8" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
+                <Input type="number" min="1" max={MAX_DRIVER_VEHICLE_SEATS} step={1} value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">En cada viaje vas a poder elegir cuántos lugares ofrecer.</p>
             </div>

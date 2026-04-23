@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { Checkbox } from '@/components/ui/checkbox';
 import { isTripCreationValid } from '@/lib/tripUtils';
+import { clampSeatCount, MAX_DRIVER_VEHICLE_SEATS } from '@/lib/seatUtils';
 
 const PET_SIZES = [
   { value: 'small', label: 'Chica' },
@@ -42,10 +43,11 @@ const PublishTrip = () => {
 
   useEffect(() => {
     if (driverProfile) {
-      setMaxVehicleSeats(driverProfile.max_seats);
+      const normalizedMaxSeats = clampSeatCount(driverProfile.max_seats, 1, MAX_DRIVER_VEHICLE_SEATS, 4);
+      setMaxVehicleSeats(normalizedMaxSeats);
       setForm(f => ({
         ...f,
-        totalSeats: String(driverProfile.max_seats),
+        totalSeats: String(normalizedMaxSeats),
         acceptsPets: driverProfile.accepts_pets,
         petSizesAccepted: driverProfile.pet_sizes_accepted || [],
       }));
@@ -111,8 +113,13 @@ const PublishTrip = () => {
       return;
     }
 
+    const totalSeats = clampSeatCount(form.totalSeats, 1, maxVehicleSeats, Math.min(maxVehicleSeats, 4));
+    if (!Number.isFinite(totalSeats) || totalSeats < 1) {
+      toast.error('Indicá una cantidad válida de asientos.');
+      return;
+    }
+
     setLoading(true);
-    const totalSeats = parseInt(form.totalSeats);
     const { data, error } = await supabase.from('trips').insert({
       driver_id: user.id,
       origin: normalizeLocation(form.origin),
@@ -205,7 +212,7 @@ const PublishTrip = () => {
                   <Label className="text-[10px] text-muted-foreground mb-1 block">¿Cuántos lugares ofrecés? (máx. {maxVehicleSeats})</Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input type="number" min={1} max={maxVehicleSeats} value={form.totalSeats} onChange={e => setForm({ ...form, totalSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
+                    <Input type="number" min={1} max={maxVehicleSeats} step={1} value={form.totalSeats} onChange={e => setForm({ ...form, totalSeats: e.target.value })} className="pl-10 h-12 rounded-xl" required />
                   </div>
                 </div>
                 <div>

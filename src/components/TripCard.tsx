@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { getInitial } from '@/lib/avatarUtils';
 import { formatPrice } from '@/lib/formatPrice';
 import { formatTime } from '@/lib/formatTime';
+import { getSeatSummary } from '@/lib/seatUtils';
 
 interface TripCardProps {
   trip: Trip;
@@ -19,6 +20,7 @@ interface TripCardProps {
 const TripCard = ({ trip, index = 0, type = 'driver', viewerIsDriver = false, viewerUserId }: TripCardProps) => {
   const navigate = useNavigate();
   const isPassengerRequest = type === 'passenger';
+  const seatSummary = getSeatSummary(trip.totalSeats, trip.availableSeats);
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.07, duration: 0.35 }}>
@@ -79,10 +81,10 @@ const TripCard = ({ trip, index = 0, type = 'driver', viewerIsDriver = false, vi
             </div>
             <div className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
-              <span className="text-xs font-medium">
+                <span className="text-xs font-medium">
                 {isPassengerRequest
                   ? `${trip.availableSeats} lugar${trip.availableSeats === 1 ? '' : 'es'}`
-                  : `${trip.availableSeats} ${trip.availableSeats === 1 ? 'lugar' : 'lugares'}`
+                    : `${seatSummary.availableSeats} disp. · ${seatSummary.occupiedSeats} ocup.`
                 }
               </span>
             </div>

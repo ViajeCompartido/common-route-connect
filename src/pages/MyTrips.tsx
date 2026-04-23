@@ -257,7 +257,7 @@ const MyTrips = () => {
     setEditingTrip(t);
     setEditForm({
       origin: t.origin, destination: t.destination, date: t.date, time: t.time,
-      available_seats: String(t.available_seats), price_per_seat: String(t.price_per_seat),
+      total_seats: String(t.total_seats), price_per_seat: String(t.price_per_seat),
       accepts_pets: t.accepts_pets, allows_luggage: t.allows_luggage, observations: t.observations || '',
     });
   };
@@ -545,13 +545,13 @@ const MyTrips = () => {
                               )}
                               {t.status === 'in_progress' && (
                                 <>
-                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-indigo-600 text-white hover:bg-indigo-700" disabled={actionLoading === t.id} onClick={async () => {
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-secondary text-secondary-foreground hover:bg-secondary/80" disabled={actionLoading === t.id} onClick={async () => {
                                     setActionLoading(t.id);
                                     await supabase.from('bookings').update({ status: 'driver_arrived' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'paid']);
                                     setActionLoading(null);
                                     toast.success('Llegaste al punto de encuentro.');
                                   }}><MapPinCheck className="h-3 w-3" /> Llegué</Button>
-                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-violet-600 text-white hover:bg-violet-700" disabled={actionLoading === t.id} onClick={async () => {
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-primary text-primary-foreground hover:bg-primary/90" disabled={actionLoading === t.id} onClick={async () => {
                                     setActionLoading(t.id);
                                     await supabase.from('bookings').update({ status: 'in_transit' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'driver_arrived', 'paid']);
                                     setActionLoading(null);

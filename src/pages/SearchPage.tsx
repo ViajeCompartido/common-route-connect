@@ -75,19 +75,32 @@ const SearchPage = () => {
     channelName: 'search-listings-refresh',
   });
 
-  const mapTrip = (t: any, profile: any): Trip => ({
-    ...(() => {
-      const summary = getSeatSummary(t.total_seats, t.available_seats);
-      return {
-    id: t.id, driverId: t.driver_id, driverName: profile ? `${profile.first_name} ${profile.last_name}`.trim() || 'Chofer' : 'Chofer',
-    driverRating: profile?.average_rating ?? 0, driverTotalTrips: profile?.total_trips ?? 0, driverVerified: profile?.verified ?? false,
-    origin: t.origin, destination: t.destination, zone: t.zone, meetingPoint: t.meeting_point,
-    date: t.date, time: t.time, availableSeats: summary.availableSeats, totalSeats: summary.totalSeats,
-    pricePerSeat: Number(t.price_per_seat), acceptsPets: t.accepts_pets, hasPet: t.has_pet,
-    allowsLuggage: t.allows_luggage, observations: t.observations, status: t.status,
-      };
-    })()
-  });
+  const mapTrip = (t: any, profile: any): Trip => {
+    const summary = getSeatSummary(t.total_seats, t.available_seats);
+
+    return {
+      id: t.id,
+      driverId: t.driver_id,
+      driverName: profile ? `${profile.first_name} ${profile.last_name}`.trim() || 'Chofer' : 'Chofer',
+      driverRating: profile?.average_rating ?? 0,
+      driverTotalTrips: profile?.total_trips ?? 0,
+      driverVerified: profile?.verified ?? false,
+      origin: t.origin,
+      destination: t.destination,
+      zone: t.zone,
+      meetingPoint: t.meeting_point,
+      date: t.date,
+      time: t.time,
+      availableSeats: summary.availableSeats,
+      totalSeats: summary.totalSeats,
+      pricePerSeat: Number(t.price_per_seat),
+      acceptsPets: t.accepts_pets,
+      hasPet: t.has_pet,
+      allowsLuggage: t.allows_luggage,
+      observations: t.observations,
+      status: t.status,
+    };
+  };
 
   const mapRideRequest = (r: any, profile: any): Trip => ({
     id: r.id, driverId: r.passenger_id,

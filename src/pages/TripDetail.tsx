@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
+import TripRouteMap from '@/components/TripRouteMap';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';

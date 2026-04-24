@@ -147,10 +147,18 @@ const TripDetail = () => {
 
     const [{ data: profileData }, { data: driverData }] = await Promise.all([
       supabase.from('profiles').select('first_name, last_name, average_rating, total_trips, verified').eq('id', tripData.driver_id).single(),
-      supabase.from('driver_profiles').select('pet_sizes_accepted').eq('user_id', tripData.driver_id).maybeSingle(),
+      supabase.from('driver_profiles').select('vehicle, plate, color, pet_sizes_accepted').eq('user_id', tripData.driver_id).maybeSingle(),
     ]);
     if (profileData) setDriver(profileData);
-    if (driverData?.pet_sizes_accepted) setDriverPetSizes(driverData.pet_sizes_accepted as string[]);
+    if (driverData) {
+      setVehicle({
+        vehicle: driverData.vehicle ?? null,
+        plate: driverData.plate ?? null,
+        color: driverData.color ?? null,
+        pet_sizes_accepted: (driverData.pet_sizes_accepted as string[] | null) ?? null,
+      });
+      if (driverData.pet_sizes_accepted) setDriverPetSizes(driverData.pet_sizes_accepted as string[]);
+    }
 
     if (user) {
       await syncExistingBooking(tripData.id, user.id);

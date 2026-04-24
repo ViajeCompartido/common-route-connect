@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
+import TripRouteMap from '@/components/TripRouteMap';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -68,6 +69,13 @@ interface DriverProfile {
   total_trips: number; verified: boolean;
 }
 
+interface DriverVehicle {
+  vehicle: string | null;
+  plate: string | null;
+  color: string | null;
+  pet_sizes_accepted: string[] | null;
+}
+
 interface PetSurcharge { size: string; surcharge: number; }
 
 const TripDetail = () => {
@@ -77,6 +85,7 @@ const TripDetail = () => {
   const { isProfileComplete, loading: profileLoading } = useProfile();
   const [trip, setTrip] = useState<TripData | null>(null);
   const [driver, setDriver] = useState<DriverProfile | null>(null);
+  const [vehicle, setVehicle] = useState<DriverVehicle | null>(null);
   const [driverPetSizes, setDriverPetSizes] = useState<string[]>([]);
   const [petSurcharges, setPetSurcharges] = useState<PetSurcharge[]>([]);
   const [bookingStatus, setBookingStatus] = useState<BookingStep>('none');
@@ -138,10 +147,18 @@ const TripDetail = () => {
 
     const [{ data: profileData }, { data: driverData }] = await Promise.all([
       supabase.from('profiles').select('first_name, last_name, average_rating, total_trips, verified').eq('id', tripData.driver_id).single(),
-      supabase.from('driver_profiles').select('pet_sizes_accepted').eq('user_id', tripData.driver_id).maybeSingle(),
+      supabase.from('driver_profiles').select('vehicle, plate, color, pet_sizes_accepted').eq('user_id', tripData.driver_id).maybeSingle(),
     ]);
     if (profileData) setDriver(profileData);
-    if (driverData?.pet_sizes_accepted) setDriverPetSizes(driverData.pet_sizes_accepted as string[]);
+    if (driverData) {
+      setVehicle({
+        vehicle: driverData.vehicle ?? null,
+        plate: driverData.plate ?? null,
+        color: driverData.color ?? null,
+        pet_sizes_accepted: (driverData.pet_sizes_accepted as string[] | null) ?? null,
+      });
+      if (driverData.pet_sizes_accepted) setDriverPetSizes(driverData.pet_sizes_accepted as string[]);
+    }
 
     if (user) {
       await syncExistingBooking(tripData.id, user.id);
@@ -269,8 +286,45 @@ const TripDetail = () => {
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-1 space-y-3">
-        {/* Route card */}
+        {/* Map with route */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <TripRouteMap
+            origin={trip.origin}
+            destination={trip.destination}
+            vehicleColor={vehicle?.color}
+            onExpand={() => {
+              const q = encodeURIComponent(`${trip.origin} a ${trip.destination}`);
+              window.open(`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(trip.origin)}&destination=${encodeURIComponent(trip.destination)}`, '_blank');
+            }}
+          />
+        </motion.div>
+
+        {/* Meeting point card */}
+        {trip.meeting_point && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+            <div className="bg-accent/5 rounded-2xl p-4 border border-accent/20 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                <MapPin className="h-4 w-4 text-accent" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-accent uppercase tracking-wider">Punto de encuentro sugerido</p>
+                <p className="text-sm font-semibold mt-0.5 leading-tight">{trip.meeting_point}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{trip.origin}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 rounded-lg text-[11px] gap-1 shrink-0 border-accent/40 text-accent hover:bg-accent/10"
+                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trip.meeting_point + ' ' + trip.origin)}`, '_blank')}
+              >
+                <MapPin className="h-3 w-3" /> Ver en mapa
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Route card */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="bg-card rounded-2xl p-5 border border-border">
             <div className="flex items-start gap-3 mb-4">
               <div className="flex flex-col items-center mt-1">
@@ -364,7 +418,30 @@ const TripDetail = () => {
                 </div>
                 {driver?.verified && <p className="text-[10px] text-accent mt-1 font-medium">✓ Identidad y vehículo verificados</p>}
               </div>
+              {bookingId && user?.id !== trip.driver_id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/chat/${bookingId}`)}
+                  className="h-10 rounded-xl gap-1 text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/5"
+                >
+                  <MessageCircle className="h-4 w-4" /> Chat
+                </Button>
+              )}
             </div>
+            {vehicle?.vehicle && (
+              <div className="flex items-center gap-2 pt-3 border-t border-border text-xs text-muted-foreground">
+                <Car className="h-3.5 w-3.5" />
+                <span>
+                  {vehicle.vehicle}
+                  {vehicle.color && ` · ${vehicle.color}`}
+                  {vehicle.plate && ` · ${vehicle.plate}`}
+                </span>
+              </div>
+            )}
+            <p className="text-[10px] text-muted-foreground mt-3 leading-snug">
+              🔒 Por seguridad, no compartimos teléfonos ni redes sociales. Toda la comunicación se hace dentro de la app.
+            </p>
           </div>
         </motion.div>
 

@@ -69,6 +69,13 @@ interface DriverProfile {
   total_trips: number; verified: boolean;
 }
 
+interface DriverVehicle {
+  vehicle: string | null;
+  plate: string | null;
+  color: string | null;
+  pet_sizes_accepted: string[] | null;
+}
+
 interface PetSurcharge { size: string; surcharge: number; }
 
 const TripDetail = () => {

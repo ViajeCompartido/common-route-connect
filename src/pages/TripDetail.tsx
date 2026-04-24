@@ -85,6 +85,7 @@ const TripDetail = () => {
   const { isProfileComplete, loading: profileLoading } = useProfile();
   const [trip, setTrip] = useState<TripData | null>(null);
   const [driver, setDriver] = useState<DriverProfile | null>(null);
+  const [vehicle, setVehicle] = useState<DriverVehicle | null>(null);
   const [driverPetSizes, setDriverPetSizes] = useState<string[]>([]);
   const [petSurcharges, setPetSurcharges] = useState<PetSurcharge[]>([]);
   const [bookingStatus, setBookingStatus] = useState<BookingStep>('none');

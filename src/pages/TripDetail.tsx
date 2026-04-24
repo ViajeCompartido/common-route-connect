@@ -418,7 +418,30 @@ const TripDetail = () => {
                 </div>
                 {driver?.verified && <p className="text-[10px] text-accent mt-1 font-medium">✓ Identidad y vehículo verificados</p>}
               </div>
+              {bookingId && user?.id !== trip.driver_id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/chat/${bookingId}`)}
+                  className="h-10 rounded-xl gap-1 text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/5"
+                >
+                  <MessageCircle className="h-4 w-4" /> Chat
+                </Button>
+              )}
             </div>
+            {vehicle?.vehicle && (
+              <div className="flex items-center gap-2 pt-3 border-t border-border text-xs text-muted-foreground">
+                <Car className="h-3.5 w-3.5" />
+                <span>
+                  {vehicle.vehicle}
+                  {vehicle.color && ` · ${vehicle.color}`}
+                  {vehicle.plate && ` · ${vehicle.plate}`}
+                </span>
+              </div>
+            )}
+            <p className="text-[10px] text-muted-foreground mt-3 leading-snug">
+              🔒 Por seguridad, no compartimos teléfonos ni redes sociales. Toda la comunicación se hace dentro de la app.
+            </p>
           </div>
         </motion.div>
 

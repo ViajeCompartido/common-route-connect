@@ -286,8 +286,45 @@ const TripDetail = () => {
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-1 space-y-3">
-        {/* Route card */}
+        {/* Map with route */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <TripRouteMap
+            origin={trip.origin}
+            destination={trip.destination}
+            vehicleColor={vehicle?.color}
+            onExpand={() => {
+              const q = encodeURIComponent(`${trip.origin} a ${trip.destination}`);
+              window.open(`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(trip.origin)}&destination=${encodeURIComponent(trip.destination)}`, '_blank');
+            }}
+          />
+        </motion.div>
+
+        {/* Meeting point card */}
+        {trip.meeting_point && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+            <div className="bg-accent/5 rounded-2xl p-4 border border-accent/20 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                <MapPin className="h-4 w-4 text-accent" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-accent uppercase tracking-wider">Punto de encuentro sugerido</p>
+                <p className="text-sm font-semibold mt-0.5 leading-tight">{trip.meeting_point}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{trip.origin}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 rounded-lg text-[11px] gap-1 shrink-0 border-accent/40 text-accent hover:bg-accent/10"
+                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trip.meeting_point + ' ' + trip.origin)}`, '_blank')}
+              >
+                <MapPin className="h-3 w-3" /> Ver en mapa
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Route card */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="bg-card rounded-2xl p-5 border border-border">
             <div className="flex items-start gap-3 mb-4">
               <div className="flex flex-col items-center mt-1">

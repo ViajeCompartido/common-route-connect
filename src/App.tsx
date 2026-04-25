@@ -33,6 +33,7 @@ import FAQ from "./pages/FAQ";
 import Help from "./pages/Help";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailure from "./pages/PaymentFailure";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/driver-requests" element={<ProtectedRoute><DriverRequests /></ProtectedRoute>} />
             <Route path="/my-trips" element={<ProtectedRoute><MyTrips /></ProtectedRoute>} />
             <Route path="/rate" element={<ProtectedRoute><Rate /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

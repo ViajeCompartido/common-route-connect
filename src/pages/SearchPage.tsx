@@ -3,7 +3,9 @@ import SearchForm, { SearchFilters } from '@/components/SearchForm';
 import TripCard from '@/components/TripCard';
 import BottomNav from '@/components/BottomNav';
 import { computeMatchScore, MatchResult } from '@/lib/fuzzyMatch';
-import { ArrowLeft, Sparkles, Car, Hand } from 'lucide-react';
+import { ArrowLeft, Sparkles, Car, Hand, Bell, Menu, Zap, ChevronRight, Route } from 'lucide-react';
+import weegoLogo from '@/assets/weego-logo.png';
+import SideMenu from '@/components/SideMenu';
 import { useNavigate } from 'react-router-dom';
 import { Trip } from '@/types';
 import { motion } from 'framer-motion';
@@ -37,6 +39,7 @@ const SearchPage = () => {
   const [passengerResults, setPassengerResults] = useState<ScoredTrip[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -194,21 +197,116 @@ const SearchPage = () => {
     </div>
   );
 
+  const quickSuggestions = [
+    { origin: 'Bahía Blanca', destination: 'Monte Hermoso' },
+    { origin: 'Bahía Blanca', destination: 'Capital Federal' },
+  ];
+
+  const handleQuickSearch = (origin: string, destination: string) => {
+    void handleSearch({
+      origin, destination, date: '', time: '',
+      acceptsPets: false, driverHasPet: false, allowsLuggage: false,
+      minRating: 0, minSeats: 1,
+    });
+  };
+
   return (
-    <div className="min-h-screen pb-20">
-      <div className="gradient-ocean px-4 pt-8 pb-6">
-        <div className="max-w-lg mx-auto">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70">
-            <ArrowLeft className="h-4 w-4" /> Volver
-          </button>
-          <h1 className="text-lg font-heading font-bold text-primary-foreground mb-1">Buscar</h1>
-          <p className="text-xs text-primary-foreground/60 mb-4">Buscá viajes y pasajeros compatibles con tu ruta</p>
-          <div className="bg-card rounded-2xl p-5 shadow-ocean">
-            <SearchForm onSearch={handleSearch} />
+    <div className="min-h-screen pb-24 bg-background">
+      <SideMenu open={menuOpen} onOpenChange={setMenuOpen} />
+
+      {/* Hero header */}
+      <div className="relative gradient-ocean pb-24 pt-4 overflow-hidden">
+        {/* Decorative glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[420px] h-[420px] bg-accent/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative max-w-lg mx-auto px-5">
+          {/* Top bar */}
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => setMenuOpen(true)}
+              className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/90 hover:bg-primary-foreground/10 active:scale-95 transition"
+              aria-label="Abrir menú"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+
+            <button onClick={() => navigate('/')} className="flex flex-col items-center active:opacity-80">
+              <img src={weegoLogo} alt="WEEGO" className="h-12 w-auto" />
+            </button>
+
+            <button
+              onClick={() => navigate('/notifications')}
+              className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/90 hover:bg-primary-foreground/10 active:scale-95 transition"
+              aria-label="Notificaciones"
+            >
+              <Bell className="h-6 w-6" />
+            </button>
+          </div>
+
+          {/* Title */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="text-center mb-5"
+          >
+            <h1 className="font-heading font-extrabold text-primary-foreground text-3xl tracking-wide mb-3">
+              ¡VAMOS!
+            </h1>
+            <h2 className="font-heading font-bold text-primary-foreground text-2xl leading-tight">
+              ¿A dónde viajamos <span className="text-accent-foreground/90 bg-accent/40 px-2 rounded-lg">hoy?</span>
+            </h2>
+            <p className="text-sm text-primary-foreground/75 mt-2">
+              Encontrá viajes compatibles con tu ruta
+            </p>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Floating search card */}
+      <div className="max-w-lg mx-auto px-4 -mt-16 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="bg-card rounded-3xl p-5 shadow-2xl shadow-primary/20 border border-border/40"
+        >
+          <SearchForm onSearch={handleSearch} />
+        </motion.div>
+
+        {/* Quick suggestions */}
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <div className="h-7 w-7 rounded-full bg-accent/15 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-accent fill-accent" />
+            </div>
+            <h3 className="text-sm font-heading font-semibold text-foreground">Sugerencias rápidas</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {quickSuggestions.map((s, i) => (
+              <motion.button
+                key={`${s.origin}-${s.destination}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.05 }}
+                onClick={() => handleQuickSearch(s.origin, s.destination)}
+                className="flex items-center gap-3 bg-card border border-border/60 rounded-2xl p-3 text-left hover:border-primary/40 hover:shadow-md active:scale-[0.98] transition"
+              >
+                <div className="h-10 w-10 rounded-full bg-secondary/60 flex items-center justify-center shrink-0">
+                  <Route className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{s.origin}</p>
+                  <p className="text-xs text-muted-foreground truncate">→ {s.destination}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </motion.button>
+            ))}
           </div>
         </div>
       </div>
 
+      {/* Results */}
       <div className="max-w-lg mx-auto px-4 py-6">
         {loading ? (
           <div className="text-center py-12"><p className="text-muted-foreground text-sm">Buscando...</p></div>

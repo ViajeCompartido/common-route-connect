@@ -217,22 +217,21 @@ const SearchPage = () => {
 
       {/* Hero header */}
       <div className="relative gradient-ocean pb-32 pt-4 overflow-hidden">
-        {/* Decorative glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[420px] h-[420px] bg-accent/20 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Background illustration — anchored to bottom, soft */}
+        {/* Background illustration — full bleed, car on the right */}
         <img
           src={searchHero}
           alt=""
           aria-hidden="true"
-          className="absolute -bottom-2 left-0 right-0 w-full h-32 object-cover object-bottom opacity-20 pointer-events-none select-none"
+          className="absolute inset-0 w-full h-full object-cover object-right opacity-90 pointer-events-none select-none"
         />
-        {/* Fade illustration into the gradient */}
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-primary/60 via-primary/20 to-transparent pointer-events-none" />
+        {/* Left-side gradient mask to keep text readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-transparent pointer-events-none" />
+        {/* Bottom fade into card */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/50 to-transparent pointer-events-none" />
 
         <div className="relative max-w-lg mx-auto px-5">
           {/* Top bar */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <button
               onClick={() => setMenuOpen(true)}
               className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/90 hover:bg-primary-foreground/10 active:scale-95 transition"
@@ -254,20 +253,27 @@ const SearchPage = () => {
             </button>
           </div>
 
-          {/* Title */}
-          <motion.div
+          {/* ¡VAMOS! centered */}
+          <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-center mb-5"
+            className="text-center font-heading font-extrabold text-primary-foreground text-4xl tracking-wider mb-6 drop-shadow-md"
           >
-            <h1 className="font-heading font-extrabold text-primary-foreground text-4xl tracking-wide mb-3 drop-shadow-md">
-              ¡VAMOS!
-            </h1>
-            <h2 className="font-heading font-bold text-primary-foreground text-2xl leading-tight">
-              ¿A dónde viajamos <span className="text-accent-foreground/90 bg-accent/40 px-2 rounded-lg">hoy?</span>
+            ¡VAMOS!
+          </motion.h1>
+
+          {/* Hero text — left aligned over empty side of illustration */}
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="text-left max-w-[62%]"
+          >
+            <h2 className="font-heading font-bold text-primary-foreground text-[28px] leading-[1.15]">
+              ¿A dónde<br />viajamos <span className="text-accent">hoy?</span>
             </h2>
-            <p className="text-sm text-primary-foreground/80 mt-2">
+            <p className="text-[13px] text-primary-foreground/85 mt-3 leading-snug">
               Encontrá viajes compatibles con tu ruta
             </p>
           </motion.div>

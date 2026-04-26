@@ -3,8 +3,9 @@ import SearchForm, { SearchFilters } from '@/components/SearchForm';
 import TripCard from '@/components/TripCard';
 import BottomNav from '@/components/BottomNav';
 import { computeMatchScore, MatchResult } from '@/lib/fuzzyMatch';
-import { ArrowLeft, Sparkles, Car, Hand, Bell, Menu, Zap, ChevronRight, Route } from 'lucide-react';
+import { ArrowLeft, Sparkles, Car, Hand, Bell, Menu, Zap, ChevronRight, Route, ShieldCheck } from 'lucide-react';
 import weegoLogo from '@/assets/weego-logo.png';
+import searchHero from '@/assets/search-hero.jpg';
 import SideMenu from '@/components/SideMenu';
 import { useNavigate } from 'react-router-dom';
 import { Trip } from '@/types';
@@ -215,9 +216,18 @@ const SearchPage = () => {
       <SideMenu open={menuOpen} onOpenChange={setMenuOpen} />
 
       {/* Hero header */}
-      <div className="relative gradient-ocean pb-24 pt-4 overflow-hidden">
+      <div className="relative gradient-ocean pb-28 pt-4 overflow-hidden">
         {/* Decorative glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[420px] h-[420px] bg-accent/20 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Background illustration */}
+        <img
+          src={searchHero}
+          alt=""
+          aria-hidden="true"
+          className="absolute bottom-0 right-0 w-[75%] max-w-[480px] opacity-40 mix-blend-screen pointer-events-none select-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/40 via-transparent to-transparent pointer-events-none" />
 
         <div className="relative max-w-lg mx-auto px-5">
           {/* Top bar */}
@@ -231,7 +241,7 @@ const SearchPage = () => {
             </button>
 
             <button onClick={() => navigate('/')} className="flex flex-col items-center active:opacity-80">
-              <img src={weegoLogo} alt="WEEGO" className="h-12 w-auto" />
+              <img src={weegoLogo} alt="WEEGO" className="h-14 w-auto drop-shadow-lg" />
             </button>
 
             <button
@@ -250,13 +260,13 @@ const SearchPage = () => {
             transition={{ duration: 0.4 }}
             className="text-center mb-5"
           >
-            <h1 className="font-heading font-extrabold text-primary-foreground text-3xl tracking-wide mb-3">
+            <h1 className="font-heading font-extrabold text-primary-foreground text-4xl tracking-wide mb-3 drop-shadow-md">
               ¡VAMOS!
             </h1>
             <h2 className="font-heading font-bold text-primary-foreground text-2xl leading-tight">
               ¿A dónde viajamos <span className="text-accent-foreground/90 bg-accent/40 px-2 rounded-lg">hoy?</span>
             </h2>
-            <p className="text-sm text-primary-foreground/75 mt-2">
+            <p className="text-sm text-primary-foreground/80 mt-2">
               Encontrá viajes compatibles con tu ruta
             </p>
           </motion.div>
@@ -304,6 +314,24 @@ const SearchPage = () => {
             ))}
           </div>
         </div>
+
+        {/* Trust block */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="mt-4 flex items-center gap-3 bg-gradient-to-br from-secondary/60 to-card border border-primary/15 rounded-2xl p-4 shadow-sm"
+        >
+          <div className="h-12 w-12 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-6 w-6 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-heading font-semibold text-foreground">Viajá seguro, viajá tranquilo</p>
+            <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+              Todos los viajes están protegidos por el sistema WEEGO
+            </p>
+          </div>
+        </motion.div>
       </div>
 
       {/* Results */}

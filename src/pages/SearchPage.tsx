@@ -39,6 +39,7 @@ const SearchPage = () => {
   const [passengerResults, setPassengerResults] = useState<ScoredTrip[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);

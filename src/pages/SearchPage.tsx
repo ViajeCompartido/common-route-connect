@@ -265,7 +265,7 @@ const SearchPage = () => {
             <h1 className="font-heading font-extrabold text-primary-foreground text-[34px] leading-[1.05] drop-shadow-md">
               ¿A dónde<br />viajamos <span className="text-accent">hoy?</span>
             </h1>
-            <p className="text-[13px] text-primary-foreground/90 mt-3 leading-snug">
+            <p className="text-[15px] font-medium text-primary-foreground/95 mt-4 leading-snug">
               Encontrá viajes compatibles<br />con tu ruta
             </p>
           </motion.div>

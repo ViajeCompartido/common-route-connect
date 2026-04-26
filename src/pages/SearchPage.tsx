@@ -216,25 +216,24 @@ const SearchPage = () => {
       <SideMenu open={menuOpen} onOpenChange={setMenuOpen} />
 
       {/* Hero header */}
-      <div className="relative gradient-ocean pb-44 pt-4 overflow-hidden">
-        {/* Background illustration — full bleed, car on the right-upper area */}
+      <div className="relative pb-20 pt-4 overflow-hidden rounded-b-[2rem]">
+        {/* Realistic background image */}
         <img
           src={searchHero}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-[85%_30%] opacity-95 pointer-events-none select-none"
+          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
         />
-        {/* Left-side gradient mask to keep text readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/75 to-transparent pointer-events-none" />
-        {/* Bottom fade into card area */}
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
+        {/* Dark green overlay — stronger on the left for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/70 to-primary/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/40 via-transparent to-primary/40 pointer-events-none" />
 
         <div className="relative max-w-lg mx-auto px-5">
           {/* Top bar */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2">
             <button
               onClick={() => setMenuOpen(true)}
-              className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/90 hover:bg-primary-foreground/10 active:scale-95 transition"
+              className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 active:scale-95 transition"
               aria-label="Abrir menú"
             >
               <Menu className="h-6 w-6" />
@@ -246,42 +245,35 @@ const SearchPage = () => {
 
             <button
               onClick={() => navigate('/notifications')}
-              className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground/90 hover:bg-primary-foreground/10 active:scale-95 transition"
+              className="h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 active:scale-95 transition relative"
               aria-label="Notificaciones"
             >
               <Bell className="h-6 w-6" />
             </button>
           </div>
 
-          {/* ¡VAMOS! centered */}
-          <motion.h1
+          {/* Hero text block — left aligned */}
+          <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-center font-heading font-extrabold text-primary-foreground text-4xl tracking-wider mb-6 drop-shadow-md"
+            className="mt-4 text-left max-w-[68%]"
           >
-            ¡VAMOS!
-          </motion.h1>
-
-          {/* Hero text — left aligned over empty side of illustration */}
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="text-left max-w-[62%]"
-          >
-            <h2 className="font-heading font-bold text-primary-foreground text-[28px] leading-[1.15]">
+            <p className="font-heading font-extrabold text-primary-foreground text-base tracking-[0.15em] mb-2 drop-shadow-md">
+              ¡VAMOS!
+            </p>
+            <h1 className="font-heading font-extrabold text-primary-foreground text-[34px] leading-[1.05] drop-shadow-md">
               ¿A dónde<br />viajamos <span className="text-accent">hoy?</span>
-            </h2>
-            <p className="text-[13px] text-primary-foreground/85 mt-3 leading-snug">
-              Encontrá viajes compatibles con tu ruta
+            </h1>
+            <p className="text-[13px] text-primary-foreground/90 mt-3 leading-snug">
+              Encontrá viajes compatibles<br />con tu ruta
             </p>
           </motion.div>
         </div>
       </div>
 
       {/* Floating search card */}
-      <div className="max-w-lg mx-auto px-4 -mt-12 relative z-10">
+      <div className="max-w-lg mx-auto px-4 -mt-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

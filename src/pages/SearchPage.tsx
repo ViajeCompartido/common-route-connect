@@ -216,18 +216,18 @@ const SearchPage = () => {
       <SideMenu open={menuOpen} onOpenChange={setMenuOpen} />
 
       {/* Hero header */}
-      <div className="relative gradient-ocean pb-32 pt-4 overflow-hidden">
-        {/* Background illustration — full bleed, car on the right */}
+      <div className="relative gradient-ocean pb-44 pt-4 overflow-hidden">
+        {/* Background illustration — full bleed, car on the right-upper area */}
         <img
           src={searchHero}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-right opacity-90 pointer-events-none select-none"
+          className="absolute inset-0 w-full h-full object-cover object-[85%_30%] opacity-95 pointer-events-none select-none"
         />
         {/* Left-side gradient mask to keep text readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-transparent pointer-events-none" />
-        {/* Bottom fade into card */}
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/50 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/75 to-transparent pointer-events-none" />
+        {/* Bottom fade into card area */}
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
 
         <div className="relative max-w-lg mx-auto px-5">
           {/* Top bar */}
@@ -281,7 +281,7 @@ const SearchPage = () => {
       </div>
 
       {/* Floating search card */}
-      <div className="max-w-lg mx-auto px-4 -mt-24 relative z-10">
+      <div className="max-w-lg mx-auto px-4 -mt-12 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

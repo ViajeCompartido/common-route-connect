@@ -216,18 +216,19 @@ const SearchPage = () => {
       <SideMenu open={menuOpen} onOpenChange={setMenuOpen} />
 
       {/* Hero header */}
-      <div className="relative gradient-ocean pb-28 pt-4 overflow-hidden">
+      <div className="relative gradient-ocean pb-32 pt-4 overflow-hidden">
         {/* Decorative glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[420px] h-[420px] bg-accent/20 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Background illustration */}
+        {/* Background illustration — anchored to bottom, soft */}
         <img
           src={searchHero}
           alt=""
           aria-hidden="true"
-          className="absolute bottom-0 right-0 w-[75%] max-w-[480px] opacity-40 mix-blend-screen pointer-events-none select-none"
+          className="absolute -bottom-2 left-0 right-0 w-full h-32 object-cover object-bottom opacity-20 pointer-events-none select-none"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/40 via-transparent to-transparent pointer-events-none" />
+        {/* Fade illustration into the gradient */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-primary/60 via-primary/20 to-transparent pointer-events-none" />
 
         <div className="relative max-w-lg mx-auto px-5">
           {/* Top bar */}
@@ -274,12 +275,12 @@ const SearchPage = () => {
       </div>
 
       {/* Floating search card */}
-      <div className="max-w-lg mx-auto px-4 -mt-16 relative z-10">
+      <div className="max-w-lg mx-auto px-4 -mt-24 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-card rounded-3xl p-5 shadow-2xl shadow-primary/20 border border-border/40"
+          className="bg-card rounded-3xl p-5 shadow-[0_24px_60px_-15px_hsl(var(--primary)/0.45)] border border-border/40"
         >
           <SearchForm onSearch={handleSearch} />
         </motion.div>

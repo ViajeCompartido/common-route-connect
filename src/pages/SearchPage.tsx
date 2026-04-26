@@ -216,7 +216,7 @@ const SearchPage = () => {
       <SideMenu open={menuOpen} onOpenChange={setMenuOpen} />
 
       {/* Hero header */}
-      <div className="relative pb-24 pt-4 overflow-hidden rounded-b-[2rem]">
+      <div className="relative pb-40 pt-5 overflow-hidden rounded-b-[2rem]">
         {/* Realistic background image */}
         <img
           src={searchHero}
@@ -239,8 +239,8 @@ const SearchPage = () => {
               <Menu className="h-6 w-6" />
             </button>
 
-            <button onClick={() => navigate('/')} className="flex flex-col items-center active:opacity-80">
-              <img src={weegoLogo} alt="WEEGO" className="h-12 w-auto drop-shadow-lg mix-blend-screen opacity-95" />
+            <button onClick={() => navigate('/')} className="flex flex-col items-center active:opacity-90">
+              <img src={weegoLogo} alt="WEEGO" className="h-16 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]" />
             </button>
 
             <button
@@ -273,7 +273,7 @@ const SearchPage = () => {
       </div>
 
       {/* Floating search card */}
-      <div className="max-w-lg mx-auto px-4 -mt-16 relative z-10">
+      <div className="max-w-lg mx-auto px-4 -mt-10 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

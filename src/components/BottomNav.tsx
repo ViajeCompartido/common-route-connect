@@ -34,7 +34,7 @@ const BottomNav = (_: BottomNavProps) => {
       <div className="flex items-center justify-around py-1 px-1 max-w-lg mx-auto" style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path
-            || (item.path === '/publish-hub' && (location.pathname === '/publish' || location.pathname === '/need-ride'))
+            || (item.path === '/publish-hub' && (location.pathname === '/publish-hub' || location.pathname === '/publish' || location.pathname === '/need-ride'))
             || (item.path === '/my-trips' && (location.pathname === '/driver-requests' || location.pathname === '/compatible-passengers'));
           return (
             <button

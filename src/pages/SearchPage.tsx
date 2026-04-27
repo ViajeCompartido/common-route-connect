@@ -224,9 +224,10 @@ const SearchPage = () => {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
         />
-        {/* Dark green overlay — stronger on the left for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/70 to-primary/30 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/40 via-transparent to-primary/40 pointer-events-none" />
+        {/* Strong WEEGO green overlay — brand-forward */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--ocean-deep))]/95 via-primary/85 to-primary/55 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(var(--ocean-deep))]/50 via-primary/20 to-[hsl(var(--ocean-deep))]/60 pointer-events-none" />
+        <div className="absolute inset-0 bg-[hsl(var(--ocean-bright))]/10 mix-blend-overlay pointer-events-none" />
 
         <div className="relative max-w-lg mx-auto px-5">
           {/* Top bar */}

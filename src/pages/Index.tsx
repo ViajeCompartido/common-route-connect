@@ -154,8 +154,8 @@ const Index = () => {
             width={1280}
             height={832}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/75 to-primary/30" />
-          <div className="absolute inset-0 bg-[hsl(var(--ocean-bright))]/15 mix-blend-overlay" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/55 to-primary/20" />
+          <div className="absolute inset-0 bg-[hsl(var(--ocean-bright))]/8 mix-blend-overlay" />
           <div className="relative p-5 pt-6 pb-6 max-w-[62%]">
             <h1 className="font-heading font-bold text-2xl leading-tight text-primary-foreground drop-shadow-md">
               Compartí viajes.
@@ -168,7 +168,7 @@ const Index = () => {
             </p>
             <button
               onClick={() => navigate('/search')}
-              className="mt-4 inline-flex items-center gap-2 bg-[hsl(var(--ocean-bright))] text-[hsl(var(--ocean-deep))] font-bold text-sm px-5 py-3 rounded-full shadow-lg shadow-[hsl(var(--ocean-bright))]/40 active:scale-95 transition-transform ring-2 ring-primary-foreground/20"
+              className="mt-4 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-3 rounded-full shadow-lg shadow-primary/40 active:scale-95 transition-transform ring-2 ring-primary-foreground/25"
             >
               <Search className="h-4 w-4" />
               Buscar viaje

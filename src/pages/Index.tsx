@@ -121,8 +121,8 @@ const Index = () => {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <img src={weegoLogo} alt="WEEGO" className="h-12 w-12 object-contain drop-shadow-sm" />
-            <span className="font-heading font-bold text-xl tracking-tight">
+            <img src={weegoLogo} alt="WEEGO" className="h-14 w-14 object-contain drop-shadow-md" />
+            <span className="font-heading font-bold text-2xl tracking-tight">
               WEE<span className="text-primary">GO</span>
             </span>
           </div>

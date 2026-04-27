@@ -112,7 +112,7 @@ const Index = () => {
 
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-md border-b border-border">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-lg mx-auto px-4 h-16 flex items-center justify-between">
           <button
             aria-label="Abrir menú"
             onClick={() => setMenuOpen(true)}
@@ -121,8 +121,8 @@ const Index = () => {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <img src={weegoLogo} alt="WEEGO" className="h-7 w-7 object-contain" />
-            <span className="font-heading font-bold text-lg tracking-tight">
+            <img src={weegoLogo} alt="WEEGO" className="h-12 w-12 object-contain drop-shadow-sm" />
+            <span className="font-heading font-bold text-xl tracking-tight">
               WEE<span className="text-primary">GO</span>
             </span>
           </div>

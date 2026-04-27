@@ -26,10 +26,6 @@ const BottomNav = (_: BottomNavProps) => {
   const chatHostPath = '/my-trips';
 
   const handleNav = (path: string) => {
-    if (path === '/publish-hub') {
-      navigate(isDriver ? '/publish' : '/need-ride');
-      return;
-    }
     navigate(path);
   };
 

@@ -241,7 +241,7 @@ const SearchPage = () => {
             </button>
 
             <button onClick={() => navigate('/')} className="flex flex-col items-center active:opacity-90">
-              <img src={weegoLogo} alt="WEEGO" className="h-16 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]" />
+              <img src={weegoLogo} alt="WEEGO" className="h-[84px] w-auto drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)] mix-blend-screen opacity-100" />
             </button>
 
             <button

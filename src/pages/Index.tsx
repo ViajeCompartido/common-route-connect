@@ -154,20 +154,21 @@ const Index = () => {
             width={1280}
             height={832}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-card/95 via-card/70 to-transparent" />
-          <div className="relative p-5 pt-6 pb-6 max-w-[60%]">
-            <h1 className="font-heading font-bold text-2xl leading-tight text-foreground">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/75 to-primary/30" />
+          <div className="absolute inset-0 bg-[hsl(var(--ocean-bright))]/15 mix-blend-overlay" />
+          <div className="relative p-5 pt-6 pb-6 max-w-[62%]">
+            <h1 className="font-heading font-bold text-2xl leading-tight text-primary-foreground drop-shadow-md">
               Compartí viajes.
             </h1>
-            <p className="font-heading font-bold text-2xl leading-tight text-primary">
+            <p className="font-heading font-extrabold text-3xl leading-tight text-[hsl(var(--ocean-bright))] drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
               Ahorrá plata.
             </p>
-            <p className="text-xs text-muted-foreground mt-2 leading-snug">
+            <p className="text-xs text-primary-foreground/90 mt-2 leading-snug">
               Encontrá o publicá viajes en segundos
             </p>
             <button
               onClick={() => navigate('/search')}
-              className="mt-4 inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold text-sm px-4 py-2.5 rounded-full shadow-md active:scale-95 transition-transform"
+              className="mt-4 inline-flex items-center gap-2 bg-[hsl(var(--ocean-bright))] text-[hsl(var(--ocean-deep))] font-bold text-sm px-5 py-3 rounded-full shadow-lg shadow-[hsl(var(--ocean-bright))]/40 active:scale-95 transition-transform ring-2 ring-primary-foreground/20"
             >
               <Search className="h-4 w-4" />
               Buscar viaje

@@ -160,7 +160,7 @@ const Index = () => {
             <h1 className="font-heading font-bold text-2xl leading-tight text-primary-foreground drop-shadow-md">
               Compartí viajes.
             </h1>
-            <p className="font-heading font-extrabold text-3xl leading-tight text-[hsl(var(--ocean-bright))] drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+            <p className="font-heading font-extrabold text-3xl leading-tight text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.55)]">
               Ahorrá plata.
             </p>
             <p className="text-xs text-primary-foreground/90 mt-2 leading-snug">
@@ -168,7 +168,7 @@ const Index = () => {
             </p>
             <button
               onClick={() => navigate('/search')}
-              className="mt-4 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-3 rounded-full shadow-lg shadow-primary/40 active:scale-95 transition-transform ring-2 ring-primary-foreground/25"
+              className="mt-4 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-5 py-3 rounded-full shadow-lg shadow-primary/40 active:scale-95 transition-transform"
             >
               <Search className="h-4 w-4" />
               Buscar viaje

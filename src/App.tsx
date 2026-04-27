@@ -17,6 +17,7 @@ import SearchPage from "./pages/SearchPage";
 import TripDetail from "./pages/TripDetail";
 import Chat from "./pages/Chat";
 import PublishTrip from "./pages/PublishTrip";
+import PublishHub from "./pages/PublishHub";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import LinkMercadoPago from "./pages/LinkMercadoPago";
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/trip/:id" element={<ProtectedRoute><TripDetail /></ProtectedRoute>} />
             <Route path="/chat/:bookingId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/publish" element={<ProtectedRoute><PublishTrip /></ProtectedRoute>} />
+            <Route path="/publish-hub" element={<ProtectedRoute><PublishHub /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/link-mercadopago" element={<ProtectedRoute><LinkMercadoPago /></ProtectedRoute>} />

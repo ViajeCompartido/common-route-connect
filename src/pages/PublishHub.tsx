@@ -26,6 +26,7 @@ import { routePriceRanges } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import heroCarpool from '@/assets/hero-carpool.jpg';
 
 const PET_SIZES = [
   { value: 'small', label: 'Chica' },
@@ -94,82 +95,145 @@ const PublishHub = () => {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <header className="px-4 pt-8 pb-4 max-w-lg mx-auto">
-        <h1 className="text-2xl font-heading font-extrabold text-foreground">Publicar</h1>
-        <p className="text-sm text-muted-foreground mt-1">Elegí qué querés hacer</p>
-      </header>
+      {mode === 'choose' && (
+        <div className="px-4 pt-4 max-w-lg mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative rounded-3xl overflow-hidden shadow-lg"
+            style={{ aspectRatio: '16 / 11' }}
+          >
+            <img src={heroCarpool} alt="Auto en ruta" className="absolute inset-0 w-full h-full object-cover" />
+            {/* Overlay verde degradado: fuerte a la izquierda, foto visible a la derecha */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(105deg, hsl(var(--primary) / 0.92) 0%, hsl(var(--primary) / 0.78) 38%, hsl(var(--primary) / 0.30) 70%, hsl(var(--primary) / 0.05) 100%)',
+              }}
+            />
+            <div className="relative h-full flex flex-col justify-between p-5">
+              <div />
+              <div className="text-primary-foreground">
+                <h1 className="font-heading font-extrabold text-[28px] leading-[1.05] drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]">
+                  ¿Qué querés<br />hacer hoy?
+                </h1>
+                <p className="text-sm mt-2 text-primary-foreground/95 leading-snug max-w-[70%] drop-shadow-[0_1px_4px_rgba(0,0,0,0.25)]">
+                  Publicá tu viaje o encontrá quién te lleve.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
-      <div className="max-w-lg mx-auto px-4 space-y-4">
+      <div className="max-w-lg mx-auto px-4 space-y-4 mt-4">
         {mode === 'choose' && (
           <>
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-primary/8 border border-primary/15 rounded-2xl p-3.5 flex items-start gap-2.5">
-              <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-              <p className="text-[12px] text-muted-foreground leading-relaxed">
-                Podés ofrecer tu viaje o publicar una solicitud. Los choferes o pasajeros interesados te contactarán.
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.04 }}
+              className="bg-primary/8 border border-primary/20 rounded-2xl p-3.5 flex items-start gap-3"
+            >
+              <div className="w-7 h-7 rounded-full border-2 border-primary/60 flex items-center justify-center shrink-0 mt-0.5">
+                <Info className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <p className="text-[12.5px] text-foreground/80 leading-relaxed">
+                Podés ofrecer tu viaje o publicar una solicitud.<br />
+                Los choferes o pasajeros interesados te contactarán.
               </p>
             </motion.div>
 
+            {/* TARJETA CHOFER - destacada en verde */}
             <motion.button
-              initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}
+              initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.08 }}
               onClick={() => {
                 if (!isDriver) { toast.error('Activá tu perfil de chofer para publicar viajes.'); navigate('/activate-driver'); return; }
                 if (!isDriverProfileComplete) { toast.error('Completá tu perfil de chofer.'); navigate('/activate-driver'); return; }
                 setMode('driver');
               }}
-              className="w-full bg-card border border-border rounded-2xl p-5 text-left active:scale-[0.98] transition-all flex items-center gap-4 hover:border-primary/40"
+              className="relative w-full rounded-2xl p-5 text-left active:scale-[0.98] transition-all flex items-center gap-4 overflow-hidden shadow-lg"
+              style={{
+                background:
+                  'linear-gradient(115deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.85) 100%)',
+              }}
             >
-              <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 shadow-md">
-                <Car className="h-7 w-7 text-primary-foreground" strokeWidth={2.2} />
+              {/* Decoración blob */}
+              <div
+                className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full opacity-25"
+                style={{ background: 'radial-gradient(circle, hsl(var(--primary-foreground) / 0.4) 0%, transparent 70%)' }}
+              />
+              <div className="relative w-16 h-16 rounded-full bg-primary-foreground flex items-center justify-center shrink-0 shadow-md">
+                <Car className="h-8 w-8 text-primary" strokeWidth={2.2} />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-base font-heading font-bold text-foreground">Publicar viaje</p>
-                  <span className="text-[9px] font-bold text-primary bg-primary/12 px-2 py-0.5 rounded-full">CHOFER</span>
+              <div className="relative flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <p className="text-[17px] font-heading font-extrabold text-primary-foreground leading-tight">Publicar viaje</p>
+                  <span className="text-[9px] font-extrabold text-primary bg-primary-foreground px-2 py-0.5 rounded-md tracking-wide">CHOFER</span>
                 </div>
-                <p className="text-[12px] text-muted-foreground leading-snug">Ofrecé lugares en tu auto y encontrá pasajeros.</p>
+                <p className="text-[12.5px] text-primary-foreground/95 leading-snug">
+                  Ofrecé lugares en tu auto<br />y encontrá pasajeros.
+                </p>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div className="relative w-9 h-9 rounded-full bg-primary-foreground/15 border border-primary-foreground/25 flex items-center justify-center shrink-0">
+                <ChevronRight className="h-5 w-5 text-primary-foreground" />
+              </div>
             </motion.button>
 
+            {/* TARJETA PASAJERO - clara */}
             <motion.button
-              initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 }}
+              initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.14 }}
               onClick={() => {
                 if (!isProfileComplete) { toast.error('Completá tu perfil para continuar.'); navigate('/edit-profile'); return; }
                 setMode('passenger');
               }}
-              className="w-full bg-card border border-border rounded-2xl p-5 text-left active:scale-[0.98] transition-all flex items-center gap-4 hover:border-primary/40"
+              className="w-full bg-card border border-border rounded-2xl p-5 text-left active:scale-[0.98] transition-all flex items-center gap-4 hover:border-primary/40 shadow-sm"
             >
-              <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
-                <UserIcon className="h-7 w-7 text-primary" strokeWidth={2.2} />
+              <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                <UserIcon className="h-8 w-8 text-primary" strokeWidth={2.2} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-base font-heading font-bold text-foreground">Solicitar viaje</p>
-                  <span className="text-[9px] font-bold text-primary bg-primary/12 px-2 py-0.5 rounded-full">PASAJERO</span>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <p className="text-[17px] font-heading font-extrabold text-foreground leading-tight">Solicitar viaje</p>
+                  <span className="text-[9px] font-extrabold text-primary bg-primary/15 px-2 py-0.5 rounded-md tracking-wide">PASAJERO</span>
                 </div>
-                <p className="text-[12px] text-muted-foreground leading-snug">Decí a dónde necesitás ir y los choferes te contactan.</p>
+                <p className="text-[12.5px] text-muted-foreground leading-snug">
+                  Decí a dónde necesitás ir<br />y los choferes te contactan.
+                </p>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-md">
+                <ChevronRight className="h-5 w-5 text-primary-foreground" />
+              </div>
             </motion.button>
 
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="bg-card rounded-2xl p-4 border border-border space-y-2.5 mt-2">
-              <p className="text-sm font-heading font-bold text-foreground">¡Más opciones, más viajes!</p>
-              <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-primary/12 flex items-center justify-center shrink-0"><Car className="h-3.5 w-3.5 text-primary" /></div>
-                <p className="text-[12px] text-muted-foreground leading-snug pt-1">Publicá tu viaje y llená tu auto.</p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-primary/12 flex items-center justify-center shrink-0"><UserIcon className="h-3.5 w-3.5 text-primary" /></div>
-                <p className="text-[12px] text-muted-foreground leading-snug pt-1">Solicitá un viaje si no encontrás opciones.</p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-primary/12 flex items-center justify-center shrink-0"><UserCheck className="h-3.5 w-3.5 text-primary" /></div>
-                <p className="text-[12px] text-muted-foreground leading-snug pt-1">Chateá, acordá y viajá seguro.</p>
+            {/* SECCIÓN INFERIOR - beneficios */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="pt-4"
+            >
+              <p className="text-[15px] font-heading font-extrabold text-foreground mb-3">¡Más opciones, más viajes!</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { icon: Car, title: 'Publicá tu viaje', sub: 'y llená tu auto.' },
+                  { icon: UserIcon, title: 'Solicitá un viaje', sub: 'si no encontrás opciones.' },
+                  { icon: Send, title: 'Chateá, acordá', sub: 'y viajá seguro.' },
+                ].map((b, i) => (
+                  <div key={i} className="flex flex-col items-start gap-2">
+                    <div className="w-9 h-9 rounded-xl bg-primary/12 flex items-center justify-center">
+                      <b.icon className="h-4.5 w-4.5 text-primary" strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <p className="text-[11.5px] font-bold text-foreground leading-tight">{b.title}</p>
+                      <p className="text-[10.5px] text-muted-foreground leading-tight mt-0.5">{b.sub}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
 
             {nearby.length > 0 && (
-              <div className="pt-3">
+              <div className="pt-5">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-heading font-bold text-foreground">Viajes solicitados cerca de vos</h2>
                   <button onClick={() => navigate('/driver-requests')} className="text-xs text-primary font-semibold active:opacity-70">Ver todos</button>

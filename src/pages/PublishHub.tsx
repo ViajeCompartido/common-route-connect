@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Car, User as UserIcon, ChevronRight, MapPin, Calendar, Clock, Users, DollarSign,
   PawPrint, Luggage, Info, Minus, Plus, Send, Coffee, Music, Snowflake, Ban,
-  UserCheck, AlertTriangle, ArrowRight,
+  UserCheck, AlertTriangle, ArrowRight, Menu, Bell,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,9 @@ import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import heroCarpool from '@/assets/hero-publish-road.jpg';
+import weegoLogo from '@/assets/weego-logo.png';
+import SideMenu from '@/components/SideMenu';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 const PET_SIZES = [
   { value: 'small', label: 'Chica' },

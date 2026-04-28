@@ -81,7 +81,8 @@ const PublishHub = () => {
   const [mode, setMode] = useState<Mode>('choose');
   const [nearby, setNearby] = useState<NearbyRequest[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { hasUnread } = useUnreadMessages();
+  const { totalUnread } = useUnreadMessages();
+  const hasUnread = totalUnread > 0;
 
   useEffect(() => {
     let cancelled = false;

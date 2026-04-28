@@ -26,6 +26,7 @@ import { routePriceRanges } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import heroCarpool from '@/assets/hero-carpool.jpg';
 
 const PET_SIZES = [
   { value: 'small', label: 'Chica' },

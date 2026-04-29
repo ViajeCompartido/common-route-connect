@@ -234,11 +234,11 @@ const DriverRequests = () => {
 
                 {/* Actions */}
                 {req.status === 'pending' && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       onClick={() => handleAccept(req)}
                       disabled={actionLoading === req.id}
-                      className="h-11 rounded-xl gap-1.5 text-sm gradient-accent text-primary-foreground"
+                      className="h-11 rounded-xl gap-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       <CheckCircle2 className="h-4 w-4" /> Aceptar
                     </Button>
@@ -246,9 +246,16 @@ const DriverRequests = () => {
                       onClick={() => handleReject(req.id)}
                       disabled={actionLoading === req.id}
                       variant="outline"
-                      className="h-11 rounded-xl gap-1.5 text-sm text-destructive border-destructive/30"
+                      className="h-11 rounded-xl gap-1.5 text-sm text-foreground border-border"
                     >
                       <XCircle className="h-4 w-4" /> Rechazar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-11 rounded-xl gap-1.5 text-sm text-foreground border-border"
+                      onClick={() => navigate(`/chat/${req.id}`)}
+                    >
+                      <MessageCircle className="h-4 w-4" /> Chat
                     </Button>
                   </div>
                 )}

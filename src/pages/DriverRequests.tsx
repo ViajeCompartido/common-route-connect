@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
+import AppHeader from '@/components/AppHeader';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -144,8 +145,9 @@ const DriverRequests = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20">
-      <div className="gradient-ocean px-4 pt-8 pb-6">
+    <div className="min-h-screen pb-20 bg-background">
+      <AppHeader />
+      <div className="gradient-ocean px-4 pt-6 pb-6">
         <div className="max-w-lg mx-auto">
           <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70">
             <ArrowLeft className="h-4 w-4" /> Volver

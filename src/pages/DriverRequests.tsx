@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
+import AppHeader from '@/components/AppHeader';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -144,8 +145,9 @@ const DriverRequests = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20">
-      <div className="gradient-ocean px-4 pt-8 pb-6">
+    <div className="min-h-screen pb-20 bg-background">
+      <AppHeader />
+      <div className="gradient-ocean px-4 pt-6 pb-6">
         <div className="max-w-lg mx-auto">
           <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70">
             <ArrowLeft className="h-4 w-4" /> Volver
@@ -167,25 +169,35 @@ const DriverRequests = () => {
         ) : (
           bookings.map((req, i) => (
             <motion.div key={req.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <div className="bg-card rounded-2xl p-5 border border-border">
+              <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
                 {/* Passenger info */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-start gap-3 mb-4">
                   <div className="w-12 h-12 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground font-heading font-bold text-lg shrink-0">
                     {getInitial(req.passengerName)}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold font-heading text-sm">{req.passengerName}</span>
-                      {req.passengerVerified && <BadgeCheck className="h-4 w-4 text-accent" />}
-                    </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <div className="flex items-center gap-1">
-                        <StarRating rating={req.passengerRating} size="sm" />
-                        <span className="text-xs font-bold">{req.passengerRating}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold font-heading text-sm truncate">{req.passengerName}</span>
+                          {req.passengerVerified && <BadgeCheck className="h-4 w-4 text-accent shrink-0" />}
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <div className="flex items-center gap-1">
+                            <StarRating rating={req.passengerRating} size="sm" />
+                            <span className="text-xs font-bold">{req.passengerRating}</span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <Car className="h-3 w-3" /> {req.passengerTrips} viajes
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <Car className="h-3 w-3" /> {req.passengerTrips} viajes
-                      </span>
+                      {req.status === 'pending' && (
+                        <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          Nueva solicitud
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -222,11 +234,11 @@ const DriverRequests = () => {
 
                 {/* Actions */}
                 {req.status === 'pending' && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       onClick={() => handleAccept(req)}
                       disabled={actionLoading === req.id}
-                      className="h-11 rounded-xl gap-1.5 text-sm gradient-accent text-primary-foreground"
+                      className="h-11 rounded-xl gap-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       <CheckCircle2 className="h-4 w-4" /> Aceptar
                     </Button>
@@ -234,9 +246,16 @@ const DriverRequests = () => {
                       onClick={() => handleReject(req.id)}
                       disabled={actionLoading === req.id}
                       variant="outline"
-                      className="h-11 rounded-xl gap-1.5 text-sm text-destructive border-destructive/30"
+                      className="h-11 rounded-xl gap-1.5 text-sm text-foreground border-border"
                     >
                       <XCircle className="h-4 w-4" /> Rechazar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-11 rounded-xl gap-1.5 text-sm text-foreground border-border"
+                      onClick={() => navigate(`/chat/${req.id}`)}
+                    >
+                      <MessageCircle className="h-4 w-4" /> Chat
                     </Button>
                   </div>
                 )}

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, BadgeCheck, Sparkles, Car } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, BadgeCheck, Sparkles, Car, UserSearch } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
+import AppHeader from '@/components/AppHeader';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,8 +53,9 @@ const CompatiblePassengers = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20">
-      <div className="gradient-ocean px-4 pt-8 pb-6">
+    <div className="min-h-screen pb-20 bg-background">
+      <AppHeader />
+      <div className="gradient-ocean px-4 pt-6 pb-6">
         <div className="max-w-lg mx-auto">
           <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70"><ArrowLeft className="h-4 w-4" /> Volver</button>
           <h1 className="text-lg font-heading font-bold text-primary-foreground">Pasajeros que buscan viaje</h1>
@@ -70,7 +72,13 @@ const CompatiblePassengers = () => {
         {loading ? (
           <div className="text-center py-12"><p className="text-muted-foreground text-sm">Cargando...</p></div>
         ) : requests.length === 0 ? (
-          <div className="text-center py-12"><p className="text-muted-foreground text-sm">No hay pasajeros buscando viaje en este momento.</p></div>
+          <div className="text-center py-16 px-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <UserSearch className="h-8 w-8 text-primary" />
+            </div>
+            <p className="font-heading font-bold text-foreground mb-1">Por ahora no hay pasajeros</p>
+            <p className="text-muted-foreground text-sm">No hay pasajeros buscando viaje en este momento.</p>
+          </div>
         ) : requests.map((req, i) => (
           <motion.div key={req.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <div className="bg-card rounded-2xl p-5 border border-accent/30">

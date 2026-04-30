@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil, AlertTriangle, Car, MapPinCheck, Route } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil, AlertTriangle, Car, MapPinCheck, Route, ArrowRight, Armchair, User as UserIcon, CalendarDays } from 'lucide-react';
+import AppHeader from '@/components/AppHeader';
+import heroRoad from '@/assets/hero-publish-road.jpg';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

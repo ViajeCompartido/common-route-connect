@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil, AlertTriangle, Car, MapPinCheck, Route } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, MessageCircle, CreditCard, Star, XCircle, CheckCircle2, Users, PawPrint, Luggage, Pause, Play, Lock, Ban, Hand, Navigation, Flag, Pencil, AlertTriangle, Car, MapPinCheck, Route, ArrowRight, Armchair, User as UserIcon, CalendarDays } from 'lucide-react';
+import AppHeader from '@/components/AppHeader';
+import heroRoad from '@/assets/hero-publish-road.jpg';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -345,27 +347,59 @@ const MyTrips = () => {
 
   const totalActive = activeBookings.length + activeRequests.length;
 
+  // Friendly date formatter (Hoy / Mañana / dd MMM)
+  const friendlyDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr + 'T00:00:00');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+      if (diff === 0) return 'Hoy';
+      if (diff === 1) return 'Mañana';
+      if (diff === -1) return 'Ayer';
+      return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+    } catch { return dateStr; }
+  };
+
+  // Estimate arrival time (assume 6h trip if no real ETA) — purely visual
+  const estimateArrival = (time: string) => {
+    if (!time) return '';
+    const [h, m] = time.split(':').map(Number);
+    const d = new Date(); d.setHours(h || 0, m || 0, 0, 0);
+    d.setHours(d.getHours() + 6);
+    return d.toTimeString().slice(0,5);
+  };
+
   return (
-    <div className="min-h-screen pb-20">
-      <div className="gradient-ocean px-4 pt-8 pb-6">
-        <div className="max-w-lg mx-auto">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70"><ArrowLeft className="h-4 w-4" /> Volver</button>
-          <h1 className="text-lg font-heading font-bold text-primary-foreground">Mis viajes</h1>
-          <p className="text-sm text-primary-foreground/70">Tus reservas, solicitudes y viajes publicados.</p>
+    <div className="min-h-screen pb-20 bg-background relative">
+      <AppHeader />
+
+      {/* Title section */}
+      <div className="bg-background px-4 pt-5 pb-3">
+        <div className="max-w-lg mx-auto flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <Car className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-primary leading-tight">Mis viajes</h1>
+            <p className="text-sm text-muted-foreground">Gestioná tus viajes</p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-4">
+      <div className="max-w-lg mx-auto px-4 pb-4 relative z-10">
         {loading ? (
           <div className="text-center py-12"><p className="text-muted-foreground text-sm">Cargando...</p></div>
         ) : (
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'history' | 'driver')}>
-            <TabsList className={`grid w-full mb-4 ${isDriver ? 'grid-cols-5' : 'grid-cols-2'}`}>
-              <TabsTrigger value="active" className="text-[11px]">Activos ({totalActive})</TabsTrigger>
-              <TabsTrigger value="history" className="text-[11px]">Historial</TabsTrigger>
-              {isDriver && <TabsTrigger value="driver" className="text-[11px]">Publicados</TabsTrigger>}
-              {isDriver && <TabsTrigger value="requests" className="text-[11px]" onClick={(e) => { e.preventDefault(); navigate('/driver-requests'); }}>Solicitudes</TabsTrigger>}
-              {isDriver && <TabsTrigger value="passengers" className="text-[11px]" onClick={(e) => { e.preventDefault(); navigate('/compatible-passengers'); }}>Pasajeros</TabsTrigger>}
+            <TabsList className={`grid w-full mb-4 bg-card border border-border rounded-2xl p-1 h-12 ${isDriver ? 'grid-cols-5' : 'grid-cols-2'}`}>
+              <TabsTrigger value="active" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none gap-1.5">
+                Activos {totalActive > 0 && <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{totalActive}</span>}
+              </TabsTrigger>
+              <TabsTrigger value="history" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Historial</TabsTrigger>
+              {isDriver && <TabsTrigger value="driver" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Publicados</TabsTrigger>}
+              {isDriver && <TabsTrigger value="requests" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none" onClick={(e) => { e.preventDefault(); navigate('/driver-requests'); }}>Solicitudes</TabsTrigger>}
+              {isDriver && <TabsTrigger value="passengers" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none" onClick={(e) => { e.preventDefault(); navigate('/compatible-passengers'); }}>Pasajeros</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="active" className="space-y-3">
@@ -402,44 +436,100 @@ const MyTrips = () => {
                 const sc = bookingStatusConfig[b.status] ?? bookingStatusConfig.pending;
                 const StatusIcon = sc.icon;
                 const breakdown = calculatePriceBreakdown(Number(b.price_per_seat), b.seats, Number(b.pet_surcharge) || 0);
+                const isInTrip = ['driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status);
                 return (
                   <motion.div key={b.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i + activeRequests.length) * 0.04 }}>
-                    <div className="bg-card rounded-2xl p-4 border border-border">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="font-semibold text-sm font-heading">{b.origin} → {b.destination}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {b.date} · {b.time}hs</p>
+                    <div className="bg-card rounded-3xl p-5 border border-border shadow-[0_2px_12px_-4px_hsl(var(--primary)/0.08)]">
+                      {/* Top row: icon + status + rating placeholder */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <UserIcon className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${isInTrip ? 'bg-primary/10 text-primary' : sc.color}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isInTrip ? 'bg-primary animate-pulse' : 'bg-current'}`} />
+                            {isInTrip ? 'En viaje' : sc.label}
+                          </div>
                         </div>
-                        <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${sc.color}`}><StatusIcon className="h-3 w-3" /> {sc.label}</Badge>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                        <span>Chofer: <span className="font-medium text-foreground">{b.driverName}</span></span>
+
+                      {/* Route + price */}
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <h2 className="font-heading font-bold text-xl text-primary leading-tight flex items-center gap-2 flex-wrap">
+                          <span>{b.origin}</span>
+                          <ArrowRight className="h-5 w-5 text-primary shrink-0" />
+                          <span>{b.destination}</span>
+                        </h2>
                       </div>
-                      <div className="text-xs text-muted-foreground space-y-0.5 mb-3">
-                        <div className="flex justify-between"><span>{b.seats} asiento{b.seats > 1 ? 's' : ''} × {formatPrice(Number(b.price_per_seat))}</span><span>{formatPrice(breakdown.basePrice)}</span></div>
-                        {breakdown.petSurcharge > 0 && <div className="flex justify-between"><span>Adicional mascota</span><span>+{formatPrice(breakdown.petSurcharge)}</span></div>}
-                        <div className="flex justify-between"><span>Cargo de servicio</span><span>+{formatPrice(breakdown.serviceFee)}</span></div>
-                        <div className="flex justify-between font-bold text-foreground border-t border-border pt-1 mt-1"><span>Total</span><span className="text-primary">{formatPrice(breakdown.totalForPassenger)}</span></div>
+
+                      <div className="flex items-end justify-between gap-3 mb-4">
+                        {/* Time/date row */}
+                        <div className="flex items-start gap-4 text-xs">
+                          <div className="flex flex-col items-start">
+                            <div className="flex items-center gap-1 text-foreground font-semibold text-sm"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {b.time?.slice(0,5)}</div>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">Salida</span>
+                          </div>
+                          <div className="w-px h-8 bg-border" />
+                          <div className="flex flex-col items-start">
+                            <div className="flex items-center gap-1 text-foreground font-semibold text-sm"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {estimateArrival(b.time)}</div>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">Llegada</span>
+                          </div>
+                          <div className="w-px h-8 bg-border" />
+                          <div className="flex flex-col items-start">
+                            <div className="flex items-center gap-1 text-foreground font-semibold text-sm"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> {friendlyDate(b.date)}</div>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">Fecha</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-heading font-bold text-2xl text-primary leading-none">{formatPrice(Number(b.price_per_seat))}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">por asiento</p>
+                          <p className="text-[10px] text-muted-foreground">Precio final</p>
+                        </div>
                       </div>
+
+                      {/* Occupancy */}
+                      <div className="bg-muted/30 rounded-2xl p-3 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Armchair className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground mb-1.5">{b.seats} de {b.seats} asiento{b.seats > 1 ? 's' : ''} reservado{b.seats > 1 ? 's' : ''}</p>
+                            <div className="h-1.5 rounded-full bg-border/60 overflow-hidden">
+                              <div className="h-full bg-primary rounded-full transition-all" style={{ width: '100%' }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Driver info */}
+                      <p className="text-xs text-muted-foreground mb-3">Chofer: <span className="font-medium text-foreground">{b.driverName}</span></p>
+
+                      {/* Actions */}
                       <div className="flex gap-2 flex-wrap">
                         {['accepted', 'coordinating'].includes(b.status) && (
-                          <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.id}?phase=coordination`)}>
-                            <MessageCircle className="h-3 w-3" /> Coordinar
-                          </Button>
-                        )}
-                        {['accepted', 'coordinating'].includes(b.status) && (
-                          <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === `pay-${b.id}`} onClick={() => handlePayBooking(b.id)}>
-                            <CreditCard className="h-3 w-3" /> {actionLoading === `pay-${b.id}` ? 'Preparando...' : 'Pagar'}
-                          </Button>
+                          <>
+                            <Button size="sm" className="flex-1 h-11 rounded-xl gap-1.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate(`/chat/${b.id}?phase=coordination`)}>
+                              <MessageCircle className="h-4 w-4" /> Coordinar
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-11 rounded-xl gap-1.5 text-sm" disabled={actionLoading === `pay-${b.id}`} onClick={() => handlePayBooking(b.id)}>
+                              <CreditCard className="h-4 w-4" /> {actionLoading === `pay-${b.id}` ? '...' : 'Pagar'}
+                            </Button>
+                          </>
                         )}
                         {['paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && (
-                          <Button size="sm" className="flex-1 h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" onClick={() => navigate(`/chat/${b.id}`)}>
-                            <MessageCircle className="h-3 w-3" /> Chatear
+                          <Button size="sm" className="flex-1 h-11 rounded-xl gap-1.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate(`/chat/${b.id}`)}>
+                            Ver viaje <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {b.status === 'pending' && (
+                          <Button size="sm" className="flex-1 h-11 rounded-xl gap-1.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate(`/chat/${b.id}`)}>
+                            Ver viaje <ArrowRight className="h-4 w-4" />
                           </Button>
                         )}
                         {CANCELLABLE_STATUSES.includes(b.status) && (
-                          <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === b.id} onClick={() => promptCancelBooking(b)}>
-                            <XCircle className="h-3 w-3" /> Cancelar
+                          <Button size="sm" variant="outline" className="h-11 rounded-xl gap-1.5 text-sm text-destructive border-destructive/30" disabled={actionLoading === b.id} onClick={() => promptCancelBooking(b)}>
+                            <XCircle className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -730,6 +820,20 @@ const MyTrips = () => {
         variant="trip"
         onConfirm={confirmCancelTripAsDriver}
       />
+
+      {/* Footer hero road image */}
+      <div className="relative mt-8 -mb-1">
+        <div className="relative h-56 overflow-hidden">
+          <img src={heroRoad} alt="WEEGO ruta" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/40 to-primary/40" />
+          <div className="absolute inset-x-0 bottom-6 flex flex-col items-center text-center">
+            <span className="font-heading font-bold text-2xl tracking-tight text-white drop-shadow-lg">
+              WEE<span className="text-accent">GO</span>
+            </span>
+            <span className="text-[10px] tracking-[0.3em] text-white/90 font-semibold mt-1 drop-shadow">VIAJÁ JUNTOS</span>
+          </div>
+        </div>
+      </div>
 
       <BottomNav role="passenger" />
     </div>

@@ -347,27 +347,59 @@ const MyTrips = () => {
 
   const totalActive = activeBookings.length + activeRequests.length;
 
+  // Friendly date formatter (Hoy / Mañana / dd MMM)
+  const friendlyDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr + 'T00:00:00');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+      if (diff === 0) return 'Hoy';
+      if (diff === 1) return 'Mañana';
+      if (diff === -1) return 'Ayer';
+      return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+    } catch { return dateStr; }
+  };
+
+  // Estimate arrival time (assume 6h trip if no real ETA) — purely visual
+  const estimateArrival = (time: string) => {
+    if (!time) return '';
+    const [h, m] = time.split(':').map(Number);
+    const d = new Date(); d.setHours(h || 0, m || 0, 0, 0);
+    d.setHours(d.getHours() + 6);
+    return d.toTimeString().slice(0,5);
+  };
+
   return (
-    <div className="min-h-screen pb-20">
-      <div className="gradient-ocean px-4 pt-8 pb-6">
-        <div className="max-w-lg mx-auto">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary-foreground/70 mb-3 text-sm active:opacity-70"><ArrowLeft className="h-4 w-4" /> Volver</button>
-          <h1 className="text-lg font-heading font-bold text-primary-foreground">Mis viajes</h1>
-          <p className="text-sm text-primary-foreground/70">Tus reservas, solicitudes y viajes publicados.</p>
+    <div className="min-h-screen pb-20 bg-background relative">
+      <AppHeader />
+
+      {/* Title section */}
+      <div className="bg-background px-4 pt-5 pb-3">
+        <div className="max-w-lg mx-auto flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <Car className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-primary leading-tight">Mis viajes</h1>
+            <p className="text-sm text-muted-foreground">Gestioná tus viajes</p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-4">
+      <div className="max-w-lg mx-auto px-4 pb-4 relative z-10">
         {loading ? (
           <div className="text-center py-12"><p className="text-muted-foreground text-sm">Cargando...</p></div>
         ) : (
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'history' | 'driver')}>
-            <TabsList className={`grid w-full mb-4 ${isDriver ? 'grid-cols-5' : 'grid-cols-2'}`}>
-              <TabsTrigger value="active" className="text-[11px]">Activos ({totalActive})</TabsTrigger>
-              <TabsTrigger value="history" className="text-[11px]">Historial</TabsTrigger>
-              {isDriver && <TabsTrigger value="driver" className="text-[11px]">Publicados</TabsTrigger>}
-              {isDriver && <TabsTrigger value="requests" className="text-[11px]" onClick={(e) => { e.preventDefault(); navigate('/driver-requests'); }}>Solicitudes</TabsTrigger>}
-              {isDriver && <TabsTrigger value="passengers" className="text-[11px]" onClick={(e) => { e.preventDefault(); navigate('/compatible-passengers'); }}>Pasajeros</TabsTrigger>}
+            <TabsList className={`grid w-full mb-4 bg-card border border-border rounded-2xl p-1 h-12 ${isDriver ? 'grid-cols-5' : 'grid-cols-2'}`}>
+              <TabsTrigger value="active" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none gap-1.5">
+                Activos {totalActive > 0 && <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{totalActive}</span>}
+              </TabsTrigger>
+              <TabsTrigger value="history" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Historial</TabsTrigger>
+              {isDriver && <TabsTrigger value="driver" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Publicados</TabsTrigger>}
+              {isDriver && <TabsTrigger value="requests" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none" onClick={(e) => { e.preventDefault(); navigate('/driver-requests'); }}>Solicitudes</TabsTrigger>}
+              {isDriver && <TabsTrigger value="passengers" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none" onClick={(e) => { e.preventDefault(); navigate('/compatible-passengers'); }}>Pasajeros</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="active" className="space-y-3">

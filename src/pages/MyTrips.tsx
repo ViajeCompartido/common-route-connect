@@ -392,15 +392,23 @@ const MyTrips = () => {
           <div className="text-center py-12"><p className="text-muted-foreground text-sm">Cargando...</p></div>
         ) : (
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'history' | 'driver')}>
-            <TabsList className={`grid w-full mb-4 bg-card border border-border rounded-2xl p-1 h-12 ${isDriver ? 'grid-cols-5' : 'grid-cols-2'}`}>
-              <TabsTrigger value="active" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none gap-1.5">
-                Activos {totalActive > 0 && <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{totalActive}</span>}
-              </TabsTrigger>
-              <TabsTrigger value="history" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Historial</TabsTrigger>
-              {isDriver && <TabsTrigger value="driver" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Publicados</TabsTrigger>}
-              {isDriver && <TabsTrigger value="requests" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none" onClick={(e) => { e.preventDefault(); navigate('/driver-requests'); }}>Solicitudes</TabsTrigger>}
-              {isDriver && <TabsTrigger value="passengers" className="text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none" onClick={(e) => { e.preventDefault(); navigate('/compatible-passengers'); }}>Pasajeros</TabsTrigger>}
-            </TabsList>
+            <div className="mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+              <TabsList className="inline-flex w-auto h-auto bg-card border border-border rounded-2xl p-1.5 gap-1 divide-x divide-border/60">
+                <TabsTrigger
+                  value="active"
+                  className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  Activos
+                  {totalActive > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{totalActive}</span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="history" className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Historial</TabsTrigger>
+                {isDriver && <TabsTrigger value="driver" className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Publicados</TabsTrigger>}
+                {isDriver && <TabsTrigger value="requests" className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary" onClick={(e) => { e.preventDefault(); navigate('/driver-requests'); }}>Solicitudes</TabsTrigger>}
+                {isDriver && <TabsTrigger value="passengers" className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary" onClick={(e) => { e.preventDefault(); navigate('/compatible-passengers'); }}>Pasajeros</TabsTrigger>}
+              </TabsList>
+            </div>
 
             <TabsContent value="active" className="space-y-3">
               {activeRequests.map((r, i) => (
@@ -822,15 +830,21 @@ const MyTrips = () => {
       />
 
       {/* Footer hero road image */}
-      <div className="relative mt-8 -mb-1">
-        <div className="relative h-56 overflow-hidden">
+      <div className="relative mt-10">
+        <div className="relative h-64 overflow-hidden">
           <img src={heroRoad} alt="WEEGO ruta" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/40 to-primary/40" />
+          {/* white gradient at top so it doesn't clash with content */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/30 to-transparent" />
+          {/* subtle bottom darken so logo is legible */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/40 to-transparent" />
           <div className="absolute inset-x-0 bottom-6 flex flex-col items-center text-center">
-            <span className="font-heading font-bold text-2xl tracking-tight text-white drop-shadow-lg">
-              WEE<span className="text-accent">GO</span>
-            </span>
-            <span className="text-[10px] tracking-[0.3em] text-white/90 font-semibold mt-1 drop-shadow">VIAJÁ JUNTOS</span>
+            <div className="flex items-center gap-2 drop-shadow-lg">
+              <img src={weegoLogo} alt="WEEGO" className="h-10 w-10 object-contain" />
+              <span className="font-heading font-bold text-3xl tracking-tight text-primary">
+                WEE<span className="text-accent">GO</span>
+              </span>
+            </div>
+            <span className="text-xs text-white/90 font-medium mt-1 drop-shadow">Viajá juntos</span>
           </div>
         </div>
       </div>

@@ -821,6 +821,20 @@ const MyTrips = () => {
         onConfirm={confirmCancelTripAsDriver}
       />
 
+      {/* Footer hero road image */}
+      <div className="relative mt-8 -mb-1">
+        <div className="relative h-56 overflow-hidden">
+          <img src={heroRoad} alt="WEEGO ruta" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/40 to-primary/40" />
+          <div className="absolute inset-x-0 bottom-6 flex flex-col items-center text-center">
+            <span className="font-heading font-bold text-2xl tracking-tight text-white drop-shadow-lg">
+              WEE<span className="text-accent">GO</span>
+            </span>
+            <span className="text-[10px] tracking-[0.3em] text-white/90 font-semibold mt-1 drop-shadow">VIAJÁ JUNTOS</span>
+          </div>
+        </div>
+      </div>
+
       <BottomNav role="passenger" />
     </div>
   );

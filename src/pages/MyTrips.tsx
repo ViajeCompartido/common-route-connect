@@ -394,20 +394,18 @@ const MyTrips = () => {
         ) : (
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'history' | 'driver')}>
             <div className="mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
-              <TabsList className="inline-flex w-auto h-auto bg-card border border-border rounded-2xl p-1.5 gap-1 divide-x divide-border/60">
+              <TabsList className="inline-flex w-auto h-auto bg-card border border-border rounded-2xl p-1.5 gap-2">
                 <TabsTrigger
                   value="active"
-                  className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                  className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary"
                 >
                   Activos
                   {totalActive > 0 && (
                     <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{totalActive}</span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="history" className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Historial</TabsTrigger>
-                {isDriver && <TabsTrigger value="driver" className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Publicados</TabsTrigger>}
-                {isDriver && <TabsTrigger value="requests" className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary" onClick={(e) => { e.preventDefault(); navigate('/driver-requests'); }}>Solicitudes</TabsTrigger>}
-                {isDriver && <TabsTrigger value="passengers" className="shrink-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary" onClick={(e) => { e.preventDefault(); navigate('/compatible-passengers'); }}>Pasajeros</TabsTrigger>}
+                <TabsTrigger value="history" className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Historial</TabsTrigger>
+                {isDriver && <TabsTrigger value="driver" className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Publicados</TabsTrigger>}
               </TabsList>
             </div>
 

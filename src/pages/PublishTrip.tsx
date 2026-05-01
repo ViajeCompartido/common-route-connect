@@ -55,13 +55,10 @@ const PublishTrip = () => {
 
   useEffect(() => {
     if (driverProfile) {
-      // Cap visible max to PUBLIC_MAX_SEATS (4) but don't go below 1
-      const vehicleMax = clampSeatCount(driverProfile.max_seats, 1, MAX_DRIVER_VEHICLE_SEATS, PUBLIC_MAX_SEATS);
-      const visibleMax = Math.min(Math.max(vehicleMax, 1), PUBLIC_MAX_SEATS);
-      setMaxVehicleSeats(visibleMax);
+      setMaxVehicleSeats(PUBLIC_MAX_SEATS);
       setForm(f => ({
         ...f,
-        totalSeats: f.totalSeats || String(Math.min(visibleMax, 1)),
+        totalSeats: String(clampSeatCount(f.totalSeats, 1, PUBLIC_MAX_SEATS, 1)),
         acceptsPets: driverProfile.accepts_pets,
         petSizesAccepted: driverProfile.pet_sizes_accepted || [],
       }));
@@ -129,7 +126,7 @@ const PublishTrip = () => {
       return;
     }
 
-    const totalSeats = clampSeatCount(form.totalSeats, 1, maxVehicleSeats, Math.min(maxVehicleSeats, PUBLIC_MAX_SEATS));
+    const totalSeats = clampSeatCount(form.totalSeats, 1, PUBLIC_MAX_SEATS, 1);
     if (!Number.isFinite(totalSeats) || totalSeats < 1) {
       toast.error('Indicá una cantidad válida de asientos.');
       return;

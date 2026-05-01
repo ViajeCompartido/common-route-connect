@@ -255,25 +255,34 @@ const PublishTrip = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-3">
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1.5 block">
-                      ¿Cuántos lugares ofrecés? (máx. {Math.min(maxVehicleSeats, PUBLIC_MAX_SEATS)})
+                      Cantidad de pasajeros (máx. 4)
                     </Label>
-                    <Select
-                      value={form.totalSeats}
-                      onValueChange={v => setForm({ ...form, totalSeats: v })}
-                    >
-                      <SelectTrigger className="h-12 rounded-xl pl-10 relative">
-                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: Math.min(maxVehicleSeats, PUBLIC_MAX_SEATS) }, (_, i) => i + 1).map(n => (
-                          <SelectItem key={n} value={String(n)}>{n} {n === 1 ? 'asiento' : 'asientos'}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="grid grid-cols-4 gap-2">
+                      {Array.from({ length: PUBLIC_MAX_SEATS }, (_, i) => i + 1).map(n => {
+                        const active = form.totalSeats === String(n);
+                        return (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setForm({ ...form, totalSeats: String(n) })}
+                            className={`h-14 rounded-xl border text-sm font-semibold transition-all flex flex-col items-center justify-center gap-0.5 ${
+                              active
+                                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                : 'bg-card text-foreground border-border hover:border-primary/40'
+                            }`}
+                            aria-pressed={active}
+                          >
+                            <span>{n}</span>
+                            <span className={`text-[10px] font-medium ${active ? 'text-primary-foreground/85' : 'text-muted-foreground'}`}>
+                              {n === 1 ? 'pasajero' : 'pasajeros'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1.5 block">Precio por asiento</Label>
@@ -288,9 +297,9 @@ const PublishTrip = () => {
                   <Users className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <div className="text-[12px] leading-relaxed text-foreground/80">
                     <p>
-                      Ofrecés <span className="font-semibold text-primary">{seatsNum} {seatsNum === 1 ? 'asiento' : 'asientos'}</span>. Podés ofrecer hasta {Math.min(maxVehicleSeats, PUBLIC_MAX_SEATS)}.
+                      Llevás <span className="font-semibold text-primary">{seatsNum} {seatsNum === 1 ? 'pasajero' : 'pasajeros'}</span>. Máximo 4 pasajeros por viaje.
                     </p>
-                    <p className="text-muted-foreground">Más asientos = más posibilidades de conseguir pasajeros.</p>
+                    <p className="text-muted-foreground">Más lugares = más posibilidades de conseguir pasajeros.</p>
                   </div>
                 </div>
 

@@ -190,21 +190,30 @@ const PublishTrip = () => {
           alt="Auto en ruta"
           className="absolute inset-0 w-full h-full object-cover"
         />
+        {/* Vertical gradient for overall blending */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(180deg, hsl(var(--primary) / 0.55) 0%, hsl(var(--primary) / 0.35) 45%, hsl(var(--background) / 0.95) 100%)',
+              'linear-gradient(180deg, hsl(var(--primary) / 0.35) 0%, hsl(var(--primary) / 0.15) 55%, hsl(var(--background) / 0.95) 100%)',
           }}
         />
-        <div className="relative z-10 max-w-lg mx-auto px-4 h-full flex flex-col justify-end pb-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Car className="h-6 w-6 text-accent drop-shadow" />
-            <h1 className="text-2xl font-heading font-bold text-primary-foreground drop-shadow">
+        {/* Left-side darkening for text legibility, keeps right (car) clean */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(90deg, hsl(var(--primary) / 0.75) 0%, hsl(var(--primary) / 0.5) 30%, transparent 65%)',
+          }}
+        />
+        <div className="relative z-10 max-w-lg mx-auto px-5 h-full flex flex-col justify-start pt-4">
+          <div className="flex items-center gap-2 mb-1 max-w-[60%]">
+            <Car className="h-5 w-5 text-accent drop-shadow" />
+            <h1 className="text-xl font-heading font-bold text-primary-foreground drop-shadow-md leading-tight">
               Publicar un viaje
             </h1>
           </div>
-          <p className="text-sm text-primary-foreground/90 drop-shadow max-w-xs">
+          <p className="text-xs text-primary-foreground/95 drop-shadow-md max-w-[55%] leading-snug">
             Cargá los datos y encontrá pasajeros compatibles.
           </p>
         </div>

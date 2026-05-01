@@ -19,7 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { Checkbox } from '@/components/ui/checkbox';
 import { isTripCreationValid } from '@/lib/tripUtils';
-import { clampSeatCount, MAX_DRIVER_VEHICLE_SEATS } from '@/lib/seatUtils';
+import { clampSeatCount } from '@/lib/seatUtils';
 import heroRoad from '@/assets/hero-publish-road.jpg';
 
 const PET_SIZES = [
@@ -41,7 +41,6 @@ const PublishTrip = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { driverProfile, isDriver, isDriverProfileComplete, loading: profileLoading } = useProfile();
-  const [maxVehicleSeats, setMaxVehicleSeats] = useState(PUBLIC_MAX_SEATS);
   const [loading, setLoading] = useState(false);
   const [extras, setExtras] = useState<string[]>([]);
   const [form, setForm] = useState({
@@ -55,7 +54,6 @@ const PublishTrip = () => {
 
   useEffect(() => {
     if (driverProfile) {
-      setMaxVehicleSeats(PUBLIC_MAX_SEATS);
       setForm(f => ({
         ...f,
         totalSeats: String(clampSeatCount(f.totalSeats, 1, PUBLIC_MAX_SEATS, 1)),

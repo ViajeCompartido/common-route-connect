@@ -188,7 +188,7 @@ const PublishHub = () => {
               onClick={() => {
                 if (!isDriver) { toast.error('Activá tu perfil de chofer para publicar viajes.'); navigate('/activate-driver'); return; }
                 if (!isDriverProfileComplete) { toast.error('Completá tu perfil de chofer.'); navigate('/activate-driver'); return; }
-                setMode('driver');
+                navigate('/publish');
               }}
               className="relative w-full rounded-2xl p-5 text-left active:scale-[0.98] transition-all flex items-center gap-4 overflow-hidden shadow-lg"
               style={{

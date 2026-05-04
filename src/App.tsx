@@ -35,6 +35,7 @@ import Help from "./pages/Help";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailure from "./pages/PaymentFailure";
 import Notifications from "./pages/Notifications";
+import CommissionRateBootstrap from "./components/CommissionRateBootstrap";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <CommissionRateBootstrap />
           <Routes>
             {/* Public routes */}
             <Route path="/welcome" element={<Welcome />} />

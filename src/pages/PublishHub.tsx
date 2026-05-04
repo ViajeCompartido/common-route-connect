@@ -223,7 +223,7 @@ const PublishHub = () => {
               initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.14 }}
               onClick={() => {
                 if (!isProfileComplete) { toast.error('Completá tu perfil para continuar.'); navigate('/edit-profile'); return; }
-                setMode('passenger');
+                navigate('/need-ride');
               }}
               className="w-full bg-card border border-border rounded-2xl p-5 text-left active:scale-[0.98] transition-all flex items-center gap-4 hover:border-primary/40 shadow-sm"
             >

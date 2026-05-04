@@ -1,33 +1,44 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { ArrowDownCircle, ArrowUpCircle, Wallet, TrendingUp, Scale, DollarSign } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Wallet, TrendingUp, Scale, DollarSign, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { PLATFORM_COMMISSION_RATE, calculateServiceFee } from '@/lib/tripUtils';
+import { calculateServiceFee } from '@/lib/tripUtils';
 import { formatPrice } from '@/lib/formatPrice';
+import { useCommissionRate } from '@/hooks/useCommissionRate';
+import { useProfile } from '@/hooks/useProfile';
+import { toast } from 'sonner';
 
 interface FinanceData {
-  moneyIn: number;        // total cobrado a pasajeros
-  driverPayouts: number;  // total liquidado/a liquidar a choferes
-  platformFee: number;    // comisión 7%
-  refunded: number;       // reembolsos a pasajeros
-  pendingPayouts: number; // pagos retenidos (status held/pending)
-  balance: number;        // moneyIn - driverPayouts - refunded
+  moneyIn: number;
+  driverPayouts: number;
+  platformFee: number;
+  refunded: number;
+  pendingPayouts: number;
+  balance: number;
 }
 
 const AdminFinance = () => {
+  const { isAdmin } = useProfile();
+  const { rate, ratePercent, updateRate } = useCommissionRate();
   const [data, setData] = useState<FinanceData>({
     moneyIn: 0, driverPayouts: 0, platformFee: 0,
     refunded: 0, pendingPayouts: 0, balance: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
+  const [pctInput, setPctInput] = useState<string>('');
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [rate]);
 
   const load = async () => {
     setLoading(true);
 
-    // Reservas que generaron movimiento de dinero
     const { data: bookings } = await supabase
       .from('bookings')
       .select('price_per_seat, seats, pet_surcharge, status')
@@ -42,7 +53,6 @@ const AdminFinance = () => {
 
       const isCancelled = b.status === 'cancelled_passenger' || b.status === 'cancelled_driver';
       if (isCancelled) {
-        // Asumimos reembolso total para cancelaciones (la lógica fina vive en calculate_refund_percentage)
         refunded += total;
         return;
       }
@@ -51,7 +61,6 @@ const AdminFinance = () => {
       if (b.status === 'completed') driverPayouts += subtotal;
     });
 
-    // Pagos pendientes desde la tabla payments si existen
     const { data: payments } = await supabase
       .from('payments')
       .select('driver_payout, status');
@@ -71,6 +80,28 @@ const AdminFinance = () => {
     setLoading(false);
   };
 
+  const openEdit = () => {
+    setPctInput(String(ratePercent));
+    setEditOpen(true);
+  };
+
+  const handleSave = async () => {
+    const num = Number(pctInput.replace(',', '.'));
+    if (Number.isNaN(num) || num < 0 || num > 100) {
+      toast.error('Ingresá un porcentaje válido entre 0 y 100');
+      return;
+    }
+    setSaving(true);
+    const { error } = await updateRate(num);
+    setSaving(false);
+    if (error) {
+      toast.error('No se pudo actualizar la comisión');
+      return;
+    }
+    toast.success(`Comisión actualizada a ${num}%`);
+    setEditOpen(false);
+  };
+
   if (loading) {
     return <div className="text-center py-12"><p className="text-muted-foreground text-sm">Cargando finanzas...</p></div>;
   }
@@ -78,7 +109,6 @@ const AdminFinance = () => {
   const cards = [
     { label: 'Dinero que entra', value: formatPrice(data.moneyIn), icon: ArrowDownCircle, color: 'text-accent', bg: 'bg-accent/10' },
     { label: 'Pagos a choferes', value: formatPrice(data.driverPayouts), icon: ArrowUpCircle, color: 'text-amber-600', bg: 'bg-amber-500/10' },
-    { label: `Comisión plataforma (${Math.round(PLATFORM_COMMISSION_RATE * 100)}%)`, value: formatPrice(data.platformFee), icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
     { label: 'Reembolsos', value: formatPrice(data.refunded), icon: ArrowUpCircle, color: 'text-destructive', bg: 'bg-destructive/10' },
     { label: 'Payouts pendientes', value: formatPrice(data.pendingPayouts), icon: Wallet, color: 'text-muted-foreground', bg: 'bg-muted' },
     { label: 'Balance neto', value: formatPrice(data.balance), icon: Scale, color: 'text-accent', bg: 'bg-accent/10' },
@@ -87,9 +117,31 @@ const AdminFinance = () => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
+        {/* Commission card (special, with edit) */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="p-4 h-full flex flex-col">
+            <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 mb-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-base font-heading font-bold leading-tight">{formatPrice(data.platformFee)}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Comisión actual: {ratePercent}%</p>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={openEdit}
+                className="mt-2 h-7 text-[10px] gap-1 self-start"
+              >
+                <Pencil className="h-3 w-3" />
+                Editar comisión
+              </Button>
+            )}
+          </Card>
+        </motion.div>
+
         {cards.map((c, i) => (
-          <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-            <Card className="p-4">
+          <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i + 1) * 0.04 }}>
+            <Card className="p-4 h-full">
               <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${c.bg} mb-2`}>
                 <c.icon className={`h-4 w-4 ${c.color}`} />
               </div>
@@ -114,6 +166,40 @@ const AdminFinance = () => {
           </div>
         </div>
       </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Editar comisión</DialogTitle>
+            <DialogDescription>
+              Este porcentaje se aplica al precio de los viajes y al cálculo de comisiones de la plataforma.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="commission-pct" className="text-xs">Porcentaje de comisión</Label>
+            <div className="relative">
+              <Input
+                id="commission-pct"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                max={100}
+                step="0.01"
+                value={pctInput}
+                onChange={(e) => setPctInput(e.target.value)}
+                placeholder="7"
+                className="pr-8"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Valor actual: {ratePercent}%</p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

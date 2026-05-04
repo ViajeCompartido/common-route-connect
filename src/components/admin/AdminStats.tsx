@@ -8,13 +8,14 @@ import { useCommissionRate } from '@/hooks/useCommissionRate';
 import { formatPrice } from '@/lib/formatPrice';
 
 const AdminStats = () => {
+  const { ratePercent, rate } = useCommissionRate();
   const [stats, setStats] = useState({
     totalTrips: 0, completedTrips: 0, totalBookings: 0, totalUsers: 0,
     grossRevenue: 0, platformFees: 0, driverPayouts: 0, cancelledTrips: 0,
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadStats(); }, []);
+  useEffect(() => { loadStats(); }, [rate]);
 
   const loadStats = async () => {
     setLoading(true);

@@ -28,16 +28,33 @@ export function isTripExpired(date: string, time: string): boolean {
 }
 
 /**
- * Platform commission rate (percentage applied on top of driver price).
- * The passenger pays this on top of the driver's price per seat.
+ * Default platform commission rate (used as fallback before app_settings loads).
  */
-export const PLATFORM_COMMISSION_RATE = 0.07; // 7%
+export const DEFAULT_COMMISSION_RATE = 0.07; // 7%
+
+let _cachedCommissionRate = DEFAULT_COMMISSION_RATE;
+
+export function setCachedCommissionRate(rate: number) {
+  if (typeof rate === 'number' && !Number.isNaN(rate) && rate >= 0 && rate <= 1) {
+    _cachedCommissionRate = rate;
+  }
+}
+
+export function getCommissionRate(): number {
+  return _cachedCommissionRate;
+}
 
 /**
- * Calculate platform service fee for a given base amount.
+ * Backwards-compatible export. Note: this captures the rate at the moment of
+ * import; for always-live values use getCommissionRate() instead.
+ */
+export const PLATFORM_COMMISSION_RATE = _cachedCommissionRate;
+
+/**
+ * Calculate platform service fee for a given base amount, using the live rate.
  */
 export function calculateServiceFee(baseAmount: number): number {
-  return Math.round(baseAmount * PLATFORM_COMMISSION_RATE);
+  return Math.round(baseAmount * _cachedCommissionRate);
 }
 
 /**
@@ -54,6 +71,6 @@ export function calculatePriceBreakdown(pricePerSeat: number, seats: number, pet
     subtotal,
     serviceFee,
     totalForPassenger,
-    driverReceives: subtotal, // driver gets base + pet surcharge, no commission deducted
+    driverReceives: subtotal,
   };
 }

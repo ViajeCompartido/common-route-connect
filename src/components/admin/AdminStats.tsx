@@ -59,7 +59,7 @@ const AdminStats = () => {
     { label: 'Reservas totales', value: stats.totalBookings.toString(), icon: Users, color: 'text-ocean-light' },
     { label: 'Usuarios registrados', value: stats.totalUsers.toString(), icon: UserCheck, color: 'text-primary' },
     { label: 'Ingresos brutos', value: formatPrice(stats.grossRevenue), icon: DollarSign, color: 'text-accent' },
-    { label: `Comisión (${Math.round(PLATFORM_COMMISSION_RATE * 100)}%)`, value: formatPrice(stats.platformFees), icon: TrendingUp, color: 'text-ocean-light' },
+    { label: `Comisión (${ratePercent}%)`, value: formatPrice(stats.platformFees), icon: TrendingUp, color: 'text-ocean-light' },
     { label: 'Pagos a choferes', value: formatPrice(stats.driverPayouts), icon: DollarSign, color: 'text-amber-600' },
     { label: 'Viajes cancelados', value: stats.cancelledTrips.toString(), icon: XCircle, color: 'text-destructive' },
   ];
@@ -86,7 +86,7 @@ const AdminStats = () => {
         </h3>
         <div className="space-y-2 text-xs">
           <div className="flex justify-between"><span className="text-muted-foreground">Ingresos brutos</span><span className="font-bold">{formatPrice(stats.grossRevenue)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Comisión plataforma ({Math.round(PLATFORM_COMMISSION_RATE * 100)}%)</span><span className="font-bold text-accent">{formatPrice(stats.platformFees)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Comisión plataforma ({ratePercent}%)</span><span className="font-bold text-accent">{formatPrice(stats.platformFees)}</span></div>
           <div className="flex justify-between border-t border-border pt-1"><span className="text-muted-foreground">Total a choferes</span><span className="font-bold">{formatPrice(stats.driverPayouts)}</span></div>
         </div>
       </Card>

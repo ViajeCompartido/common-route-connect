@@ -467,8 +467,27 @@ const TripDetail = () => {
                 })}
               </div>
 
+              {/* Trip closed (full / cancelled / completed) message — only when user has no booking yet */}
+              {bookingStatus === 'none' && !rejected && ['full', 'cancelled', 'completed', 'in_progress'].includes(trip.status) && (
+                <div className="bg-muted/40 border border-border rounded-xl p-3 mb-4 flex items-center gap-2.5">
+                  <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold">
+                      {trip.status === 'full' ? 'Viaje completo' :
+                       trip.status === 'cancelled' ? 'Viaje cancelado' :
+                       trip.status === 'completed' ? 'Viaje finalizado' : 'Viaje en curso'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {trip.status === 'full'
+                        ? 'Este viaje ya no acepta nuevas reservas. Buscá otro disponible.'
+                        : 'Este viaje ya no está disponible para reservar.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Request form */}
-              {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
+              {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && trip.status === 'active' && (
                 <div className="space-y-3 mb-4">
                   <div className="bg-secondary/60 rounded-xl p-3 space-y-3">
                     <div className="flex items-center justify-between">

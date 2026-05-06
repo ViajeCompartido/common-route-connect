@@ -673,23 +673,72 @@ const MyTrips = () => {
                             </div>
                             <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mb-3">
                               <span className="flex items-center gap-1"><Users className="h-3 w-3" /> Totales: {t.total_seats}</span>
-                              <span>Ocupados: {getSeatSummary(t.total_seats, t.available_seats).occupiedSeats}</span>
+                              <span>Reservados: {getSeatSummary(t.total_seats, t.available_seats).occupiedSeats}</span>
                               <span>Disponibles: {t.available_seats}</span>
                               <span className="font-heading font-bold text-primary">{formatPrice(Number(t.price_per_seat))}/asiento</span>
                             </div>
+
+                            {/* Passengers list (driver view) */}
+                            {(() => {
+                              const passengers = tripPassengers[t.id] ?? [];
+                              if (passengers.length === 0) {
+                                return (
+                                  <div className="bg-muted/30 rounded-xl p-3 mb-3 text-[11px] text-muted-foreground text-center">
+                                    Todavía no hay pasajeros reservados.
+                                  </div>
+                                );
+                              }
+                              const payLabel = (s: string): { label: string; className: string } => {
+                                if (s === 'completed' || s === 'held') return { label: 'Pagado', className: 'bg-accent/15 text-accent border-accent/30' };
+                                if (s === 'refunded') return { label: 'Reembolsado', className: 'bg-muted text-muted-foreground border-border' };
+                                if (s === 'failed') return { label: 'Fallido', className: 'bg-destructive/15 text-destructive border-destructive/30' };
+                                return { label: 'Pago pendiente', className: 'bg-amber-500/15 text-amber-700 border-amber-500/30' };
+                              };
+                              return (
+                                <div className="bg-muted/30 rounded-xl p-3 mb-3 space-y-2">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Pasajeros reservados ({passengers.length})</p>
+                                  {passengers.map(p => {
+                                    const pay = payLabel(p.payment_status);
+                                    return (
+                                      <div key={p.booking_id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
+                                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading font-bold text-xs shrink-0 overflow-hidden">
+                                          {p.avatar_url
+                                            ? <img src={p.avatar_url} alt={p.passenger_name} className="w-full h-full object-cover" />
+                                            : (p.passenger_name?.[0]?.toUpperCase() ?? 'P')}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-semibold truncate">{p.passenger_name}</p>
+                                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                            <span className="text-[10px] text-muted-foreground"><Armchair className="h-2.5 w-2.5 inline mr-0.5" />{p.seats}</span>
+                                            <Badge className={`text-[9px] gap-1 rounded-full px-1.5 py-0 border ${pay.className}`}>{pay.label}</Badge>
+                                          </div>
+                                        </div>
+                                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 rounded-lg border-primary/30 text-primary shrink-0"
+                                          onClick={() => navigate(`/chat/${p.booking_id}`)}>
+                                          <MessageCircle className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
+
                             <div className="flex gap-2 flex-wrap">
                               <Button size="sm" variant="outline" className="flex-1 h-9 rounded-xl gap-1 text-xs" onClick={() => navigate('/driver-requests')}>Solicitudes</Button>
                               {t.status === 'active' && (
                                 <>
                                   <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'paused')}><Pause className="h-3 w-3" /> Pausar</Button>
-                                  <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'full')}><Ban className="h-3 w-3" /> Lleno</Button>
+                                  <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'full')}><Ban className="h-3 w-3" /> Marcar como lleno</Button>
                                 </>
                               )}
                               {t.status === 'paused' && (
                                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'active')}><Play className="h-3 w-3" /> Reactivar</Button>
                               )}
                               {t.status === 'full' && (
-                                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'active')}><Play className="h-3 w-3" /> Reabrir</Button>
+                                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id || t.available_seats === 0} onClick={() => handleTripAction(t.id, 'active')}>
+                                  <Play className="h-3 w-3" /> Volver a mostrar viaje
+                                </Button>
                               )}
                               {['active', 'paused', 'full'].includes(t.status) && (
                                 <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'in_progress')}><Car className="h-3 w-3" /> En camino</Button>
@@ -708,7 +757,7 @@ const MyTrips = () => {
                                     setActionLoading(null);
                                     toast.success('Viaje iniciado.');
                                   }}><Route className="h-3 w-3" /> Iniciar viaje</Button>
-                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar</Button>
+                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar viaje</Button>
                                 </>
                               )}
                               {['active', 'paused', 'full'].includes(t.status) && (

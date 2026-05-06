@@ -93,6 +93,7 @@ const MyTrips = () => {
   const { isDriver } = useProfile();
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [driverTrips, setDriverTrips] = useState<TripRow[]>([]);
+  const [tripPassengers, setTripPassengers] = useState<Record<string, DriverTripPassenger[]>>({});
   const [rideRequests, setRideRequests] = useState<RideRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);

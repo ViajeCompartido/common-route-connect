@@ -608,7 +608,7 @@ const TripDetail = () => {
 
               {/* Action buttons */}
               <div className="space-y-2">
-                {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
+                {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && trip.status === 'active' && (
                   <Button onClick={handleRequestSeat} disabled={submitting} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
                     <Send className="h-4 w-4" /> {submitting ? 'Enviando...' : 'Reservar mi lugar'}
                   </Button>

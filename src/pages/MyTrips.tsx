@@ -134,8 +134,51 @@ const MyTrips = () => {
       }));
     } else { setBookings([]); }
 
-    setDriverTrips((tripsRes.data ?? []) as TripRow[]);
+    const driverTripsData = (tripsRes.data ?? []) as TripRow[];
+    setDriverTrips(driverTripsData);
     setRideRequests((requestsRes.data ?? []) as RideRequestRow[]);
+
+    // Load passengers (bookings + payments + profiles) for each driver trip
+    if (driverTripsData.length > 0) {
+      const dtIds = driverTripsData.map(t => t.id);
+      const { data: dtBookings } = await supabase
+        .from('bookings')
+        .select('id, trip_id, passenger_id, seats, status')
+        .in('trip_id', dtIds)
+        .not('status', 'in', '("cancelled_passenger","cancelled_driver","rejected")');
+
+      const tpMap: Record<string, DriverTripPassenger[]> = {};
+      if (dtBookings && dtBookings.length > 0) {
+        const passengerIds = [...new Set(dtBookings.map(b => b.passenger_id))];
+        const bookingIds = dtBookings.map(b => b.id);
+        const [{ data: pProfiles }, { data: pPayments }] = await Promise.all([
+          supabase.from('profiles').select('id, first_name, last_name, avatar_url').in('id', passengerIds),
+          supabase.from('payments').select('booking_id, status').in('booking_id', bookingIds),
+        ]);
+        const pMap = new Map((pProfiles ?? []).map(p => [p.id, p]));
+        const payMap = new Map((pPayments ?? []).map(p => [p.booking_id, p.status as string]));
+
+        for (const b of dtBookings) {
+          const prof = pMap.get(b.passenger_id);
+          const item: DriverTripPassenger = {
+            booking_id: b.id,
+            passenger_id: b.passenger_id,
+            passenger_name: prof ? `${prof.first_name ?? ''} ${prof.last_name ?? ''}`.trim() || 'Pasajero' : 'Pasajero',
+            avatar_url: prof?.avatar_url ?? null,
+            seats: b.seats,
+            status: b.status,
+            payment_status: payMap.get(b.id) ?? (
+              ['paid', 'driver_on_way', 'driver_arrived', 'in_transit', 'completed'].includes(b.status) ? 'completed' : 'pending'
+            ),
+          };
+          (tpMap[b.trip_id] ||= []).push(item);
+        }
+      }
+      setTripPassengers(tpMap);
+    } else {
+      setTripPassengers({});
+    }
+
     setLoading(false);
   }, [user]);
 

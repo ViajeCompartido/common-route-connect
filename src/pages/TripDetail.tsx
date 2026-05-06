@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { getInitial } from '@/lib/avatarUtils';
-import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, MessageCircle, BadgeCheck, Car, Send, CheckCircle2, CreditCard, XCircle, Info, Handshake } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, MessageCircle, BadgeCheck, Car, Send, CheckCircle2, CreditCard, XCircle, Info, Handshake, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -345,9 +345,19 @@ const TripDetail = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 py-3 border-t border-border text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 py-3 border-t border-border text-sm text-muted-foreground flex-wrap">
               <div className="flex items-center gap-1.5"><Clock className="h-4 w-4" /><span>{trip.date} · {trip.time}hs</span></div>
               <div className="flex items-center gap-1.5"><Users className="h-4 w-4" /><span className="font-medium">{trip.available_seats} de {trip.total_seats} lugares libres</span></div>
+              {trip.status === 'full' && (
+                <Badge className="text-[10px] gap-1 rounded-full px-2 py-0.5 border bg-blue-500/15 text-blue-700 border-blue-500/30">
+                  <Lock className="h-3 w-3" /> Completo
+                </Badge>
+              )}
+              {trip.status === 'cancelled' && (
+                <Badge className="text-[10px] gap-1 rounded-full px-2 py-0.5 border bg-destructive/15 text-destructive border-destructive/30">
+                  <XCircle className="h-3 w-3" /> Cancelado
+                </Badge>
+              )}
             </div>
 
             {seatSummary && (
@@ -467,8 +477,27 @@ const TripDetail = () => {
                 })}
               </div>
 
+              {/* Trip closed (full / cancelled / completed) message — only when user has no booking yet */}
+              {bookingStatus === 'none' && !rejected && ['full', 'cancelled', 'completed', 'in_progress'].includes(trip.status) && (
+                <div className="bg-muted/40 border border-border rounded-xl p-3 mb-4 flex items-center gap-2.5">
+                  <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold">
+                      {trip.status === 'full' ? 'Viaje completo' :
+                       trip.status === 'cancelled' ? 'Viaje cancelado' :
+                       trip.status === 'completed' ? 'Viaje finalizado' : 'Viaje en curso'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {trip.status === 'full'
+                        ? 'Este viaje ya no acepta nuevas reservas. Buscá otro disponible.'
+                        : 'Este viaje ya no está disponible para reservar.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Request form */}
-              {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
+              {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && trip.status === 'active' && (
                 <div className="space-y-3 mb-4">
                   <div className="bg-secondary/60 rounded-xl p-3 space-y-3">
                     <div className="flex items-center justify-between">
@@ -589,7 +618,7 @@ const TripDetail = () => {
 
               {/* Action buttons */}
               <div className="space-y-2">
-                {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && (
+                {bookingStatus === 'none' && !rejected && trip.available_seats > 0 && trip.status === 'active' && (
                   <Button onClick={handleRequestSeat} disabled={submitting} className="w-full h-12 gradient-accent text-primary-foreground gap-2 rounded-xl text-sm font-semibold">
                     <Send className="h-4 w-4" /> {submitting ? 'Enviando...' : 'Reservar mi lugar'}
                   </Button>

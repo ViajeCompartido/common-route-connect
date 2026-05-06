@@ -41,6 +41,16 @@ interface TripRow {
   accepts_pets: boolean; allows_luggage: boolean; created_at: string; observations: string | null;
 }
 
+interface DriverTripPassenger {
+  booking_id: string;
+  passenger_id: string;
+  passenger_name: string;
+  avatar_url: string | null;
+  seats: number;
+  status: string;
+  payment_status: string;
+}
+
 interface RideRequestRow {
   id: string; origin: string; destination: string; date: string; time: string;
   seats: number; has_pet: boolean; has_luggage: boolean; pet_size: string | null;

@@ -37,6 +37,32 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action, user_id, email, redirect_to } = body ?? {};
 
+    if (action === 'list_emails') {
+      const emails: Record<string, string> = {};
+      let page = 1;
+      while (true) {
+        const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+        if (error) throw error;
+        for (const u of data.users) emails[u.id] = u.email ?? '';
+        if (data.users.length < 1000) break;
+        page++;
+      }
+      return new Response(JSON.stringify({ emails }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'send_recovery_by_id') {
+      if (!user_id) throw new Error('user_id requerido');
+      const { data: u, error: gErr } = await admin.auth.admin.getUserById(user_id);
+      if (gErr || !u.user?.email) throw gErr ?? new Error('Usuario sin email');
+      const { error } = await admin.auth.resetPasswordForEmail(u.user.email, { redirectTo: redirect_to });
+      if (error) throw error;
+      return new Response(JSON.stringify({ ok: true, email: u.user.email }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'delete_user') {
       if (!user_id) throw new Error('user_id requerido');
       // Best-effort cleanup of related rows

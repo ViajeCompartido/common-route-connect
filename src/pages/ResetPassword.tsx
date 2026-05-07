@@ -11,19 +11,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
-  const { updatePassword } = useAuth();
+  const { updatePassword, signOut } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecovery(true);
-      }
-    });
+    // Supabase auto-handles ?code=... or #access_token=... in URL via detectSessionInUrl
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {});
     return () => subscription.unsubscribe();
   }, []);
 
@@ -33,15 +30,24 @@ const ResetPassword = () => {
       toast.error('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
+    if (password !== confirmPassword) {
+      toast.error('Las contraseñas no coinciden.');
+      return;
+    }
     setIsLoading(true);
     const { error } = await updatePassword(password);
     setIsLoading(false);
 
     if (error) {
-      toast.error('No pudimos cambiar la contraseña. Intentá de nuevo.');
+      toast.error('No pudimos cambiar la contraseña. Pedí un nuevo enlace de recuperación.');
     } else {
       setSuccess(true);
-      toast.success('¡Contraseña actualizada!');
+      toast.success('Contraseña actualizada correctamente.');
+      // Sign out and send to login so user logs in with new password
+      setTimeout(async () => {
+        await signOut();
+        navigate('/login');
+      }, 1500);
     }
   };
 
@@ -51,10 +57,7 @@ const ResetPassword = () => {
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
           <CheckCircle2 className="h-16 w-16 text-accent mx-auto mb-4" />
           <h1 className="text-xl font-heading font-bold mb-2">¡Listo!</h1>
-          <p className="text-sm text-muted-foreground mb-6">Tu contraseña fue actualizada correctamente.</p>
-          <Button onClick={() => navigate('/')} className="gradient-accent text-primary-foreground rounded-xl">
-            Ir a la app
-          </Button>
+          <p className="text-sm text-muted-foreground mb-6">Contraseña actualizada correctamente. Te llevamos al login...</p>
         </motion.div>
       </div>
     );
@@ -76,7 +79,7 @@ const ResetPassword = () => {
         className="flex-1 bg-background rounded-t-3xl px-4 pt-8 pb-10"
       >
         <div className="max-w-md mx-auto">
-          <h1 className="text-xl font-heading font-bold mb-1">Nueva contraseña</h1>
+          <h1 className="text-xl font-heading font-bold mb-1">Crear nueva contraseña</h1>
           <p className="text-sm text-muted-foreground mb-6">Elegí una contraseña nueva para tu cuenta.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -93,6 +96,18 @@ const ResetPassword = () => {
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Repetir nueva contraseña"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                className="pl-10 h-12 rounded-xl"
+                required
+              />
             </div>
 
             <Button type="submit" disabled={isLoading} className="w-full h-12 gradient-accent text-primary-foreground rounded-xl font-semibold text-sm">

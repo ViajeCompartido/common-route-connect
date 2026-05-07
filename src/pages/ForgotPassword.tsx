@@ -21,11 +21,12 @@ const ForgotPassword = () => {
     const { error } = await resetPassword(email);
     setIsLoading(false);
 
+    // Always show success-style message for privacy (don't leak whether email exists)
+    setSent(true);
     if (error) {
-      toast.error('No pudimos enviar el email. Verificá que la dirección sea correcta.');
+      toast.message('Si el email está registrado, recibirás un enlace de recuperación.');
     } else {
-      setSent(true);
-      toast.success('¡Email enviado! Revisá tu bandeja de entrada.');
+      toast.success('Te enviamos un enlace para restablecer tu contraseña. Revisá tu correo.');
     }
   };
 

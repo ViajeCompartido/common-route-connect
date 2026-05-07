@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Pencil, Trash2, Eye } from 'lucide-react';
+import { Search, Pencil, Trash2, Eye, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -89,15 +89,31 @@ const AdminUsers = () => {
   };
 
   const handleDelete = async (userId: string) => {
-    if (!confirm('¿Estás segura de eliminar este usuario? Esta acción no se puede deshacer.')) return;
+    if (!confirm('¿Eliminar este usuario definitivamente? Se borrará su cuenta de acceso y todos sus datos. Esta acción no se puede deshacer.')) return;
     setDeleting(userId);
-    // Delete roles first, then profile
-    await supabase.from('user_roles').delete().eq('user_id', userId);
-    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    const { data, error } = await supabase.functions.invoke('admin-user-actions', {
+      body: { action: 'delete_user', user_id: userId },
+    });
     setDeleting(null);
-    if (error) { toast.error('Error al eliminar.'); return; }
-    toast.success('Usuario eliminado.');
+    if (error || (data as any)?.error) {
+      toast.error('Error al eliminar: ' + (error?.message || (data as any)?.error || ''));
+      return;
+    }
+    toast.success('Usuario eliminado completamente.');
     setUsers(prev => prev.filter(u => u.id !== userId));
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    if (!confirm('¿Enviar enlace de recuperación de contraseña al email del usuario?')) return;
+    const redirect_to = `${window.location.origin}/reset-password`;
+    const { data, error } = await supabase.functions.invoke('admin-user-actions', {
+      body: { action: 'send_recovery_by_id', user_id: userId, redirect_to },
+    });
+    if (error || (data as any)?.error) {
+      toast.error('No se pudo enviar el enlace. ' + (error?.message || (data as any)?.error || ''));
+      return;
+    }
+    toast.success('Se envió un enlace de recuperación al email del usuario.');
   };
 
   const filtered = users.filter(u => {
@@ -171,7 +187,10 @@ const AdminUsers = () => {
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(u)} title="Editar">
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(u.id)} disabled={deleting === u.id} title="Eliminar">
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-primary" onClick={() => handleResetPassword(u.id)} title="Restablecer contraseña">
+                      <KeyRound className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(u.id)} disabled={deleting === u.id} title="Eliminar definitivamente">
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>

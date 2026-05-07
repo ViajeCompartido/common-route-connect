@@ -38,7 +38,16 @@ const Register = () => {
     setIsLoading(false);
 
     if (error) {
-      toast.error(error.message);
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('user already')) {
+        toast.error('Este email ya tiene una cuenta en WEEGO. Si olvidaste tu contraseña, tocá "Recuperar contraseña".');
+      } else if (msg.includes('invalid email')) {
+        toast.error('El email ingresado no es válido.');
+      } else if (msg.includes('password')) {
+        toast.error('La contraseña no cumple los requisitos mínimos.');
+      } else {
+        toast.error('No pudimos crear la cuenta. Intentá de nuevo.');
+      }
     } else {
       toast.success('¡Cuenta creada! Revisá tu email para confirmar.');
       navigate('/get-started');

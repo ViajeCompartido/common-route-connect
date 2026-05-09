@@ -71,7 +71,7 @@ const Profile = () => {
       <div className="max-w-lg mx-auto px-4 -mt-12 space-y-3">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="bg-card rounded-2xl p-5 border border-border text-center">
-            <div className="w-20 h-20 rounded-full gradient-ocean mx-auto flex items-center justify-center text-primary-foreground text-2xl font-heading font-bold -mt-14 border-4 border-card shadow-ocean">
+            <div className="w-32 h-32 rounded-full gradient-ocean mx-auto flex items-center justify-center text-primary-foreground text-4xl font-heading font-bold -mt-20 border-4 border-card ring-2 ring-accent shadow-ocean overflow-hidden">
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt={fullName} className="w-full h-full object-cover rounded-full" />
               ) : (

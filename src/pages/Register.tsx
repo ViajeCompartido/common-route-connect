@@ -40,7 +40,14 @@ const Register = () => {
     if (error) {
       const msg = (error.message || '').toLowerCase();
       if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('user already')) {
-        toast.error('Este email ya tiene una cuenta en WEEGO. Si olvidaste tu contraseña, tocá "Recuperar contraseña".');
+        toast.error('Este email ya está registrado en WEEGO.', {
+          description: '¿Olvidaste tu contraseña? Tocá acá para recuperarla.',
+          duration: 8000,
+          action: {
+            label: 'Recuperar contraseña',
+            onClick: () => navigate('/forgot-password'),
+          },
+        });
       } else if (msg.includes('invalid email')) {
         toast.error('El email ingresado no es válido.');
       } else if (msg.includes('password')) {

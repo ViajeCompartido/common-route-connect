@@ -71,6 +71,7 @@ const App = () => (
             <Route path="/publish" element={<ProtectedRoute><PublishTrip /></ProtectedRoute>} />
             <Route path="/publish-hub" element={<ProtectedRoute><PublishHub /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/link-mercadopago" element={<ProtectedRoute><LinkMercadoPago /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

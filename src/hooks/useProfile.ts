@@ -21,6 +21,7 @@ export interface ProfileData {
 export interface DriverProfileData {
   vehicle: string;
   plate: string;
+  color: string | null;
   max_seats: number;
   accepts_pets: boolean;
   pet_sizes_accepted: string[];
@@ -42,7 +43,7 @@ export function useProfile() {
 
     const [{ data: profileData }, { data: driverData }, { data: roles }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('driver_profiles').select('vehicle, plate, max_seats, accepts_pets, pet_sizes_accepted, license_url, license_verified').eq('user_id', user.id).maybeSingle(),
+      supabase.from('driver_profiles').select('vehicle, plate, color, max_seats, accepts_pets, pet_sizes_accepted, license_url, license_verified').eq('user_id', user.id).maybeSingle(),
       supabase.from('user_roles').select('role').eq('user_id', user.id),
     ]);
 

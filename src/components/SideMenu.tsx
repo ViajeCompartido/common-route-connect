@@ -54,9 +54,13 @@ const SideMenu = ({ open, onOpenChange }: SideMenuProps) => {
 
         {/* Header with profile */}
         <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-5 pt-8">
-          <div className="flex items-center gap-2 mb-5">
-            <img src={weegoLogo} alt="WEEGO" className="h-7 w-7 object-contain bg-card rounded-full p-1" />
-            <span className="font-heading font-bold text-lg tracking-tight">
+          <div className="flex items-center gap-3 mb-6">
+            <img
+              src={weegoLogo}
+              alt="WEEGO"
+              className="h-14 w-14 object-contain bg-card rounded-full p-1.5 shadow-md ring-2 ring-primary-foreground/20 shrink-0"
+            />
+            <span className="font-heading font-bold text-2xl tracking-tight leading-none">
               WEEGO
             </span>
           </div>

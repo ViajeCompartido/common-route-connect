@@ -1,12 +1,12 @@
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Calendar, Settings, LogOut, BadgeCheck, Car, Shield, Clock, XCircle, PawPrint, MapPin, Edit, Plus, ShieldCheck } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Mail, Calendar, Settings, LogOut, BadgeCheck, Car, Shield, Clock, XCircle, PawPrint, Edit, Plus, ShieldCheck } from 'lucide-react';
 import { getInitial } from '@/lib/avatarUtils';
 import { Button } from '@/components/ui/button';
 import StarRating from '@/components/StarRating';
 import BottomNav from '@/components/BottomNav';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from '@/hooks/useProfile';
+import { useProfile, ProfileData, DriverProfileData } from '@/hooks/useProfile';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -25,18 +25,64 @@ const PET_SIZE_LABELS: Record<string, string> = {
   large: 'Grande',
 };
 
+// Display-side fixes for common Argentine city names missing accents
+const CITY_FIXES: Record<string, string> = {
+  'bahia blanca': 'Bahía Blanca',
+  'cordoba': 'Córdoba',
+  'rio cuarto': 'Río Cuarto',
+  'concepcion del uruguay': 'Concepción del Uruguay',
+};
+const formatCity = (city?: string | null) => {
+  if (!city) return '';
+  const key = city.trim().toLowerCase();
+  return CITY_FIXES[key] ?? city;
+};
+
 const Profile = () => {
   const navigate = useNavigate();
+  const { userId } = useParams<{ userId?: string }>();
   const { user, signOut } = useAuth();
-  const { profile, driverProfile, isDriver, isAdmin, loading } = useProfile();
-  const [reviews, setReviews] = useState<ReviewData[]>([]);
+  const own = useProfile();
+
+  const isOwnProfile = !userId || userId === user?.id;
+
+  // Public-view state (when looking at someone else)
+  const [otherProfile, setOtherProfile] = useState<ProfileData | null>(null);
+  const [otherDriver, setOtherDriver] = useState<DriverProfileData | null>(null);
+  const [otherIsDriver, setOtherIsDriver] = useState(false);
+  const [loadingOther, setLoadingOther] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (isOwnProfile) return;
+    setLoadingOther(true);
+    (async () => {
+      const [{ data: p }, { data: d }, { data: roles }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId!).single(),
+        supabase.from('driver_profiles').select('vehicle, plate, color, max_seats, accepts_pets, pet_sizes_accepted, license_url, license_verified').eq('user_id', userId!).maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', userId!),
+      ]);
+      if (p) setOtherProfile(p as ProfileData);
+      if (d) setOtherDriver(d as DriverProfileData);
+      setOtherIsDriver(((roles ?? []).map(r => r.role)).includes('driver'));
+      setLoadingOther(false);
+    })();
+  }, [userId, isOwnProfile]);
+
+  const profile = isOwnProfile ? own.profile : otherProfile;
+  const driverProfile = isOwnProfile ? own.driverProfile : otherDriver;
+  const isDriver = isOwnProfile ? own.isDriver : otherIsDriver;
+  const isAdmin = isOwnProfile ? own.isAdmin : false;
+  const loading = isOwnProfile ? own.loading : loadingOther;
+
+  const [reviews, setReviews] = useState<ReviewData[]>([]);
+  const targetUserId = isOwnProfile ? user?.id : userId;
+
+  useEffect(() => {
+    if (!targetUserId) return;
     supabase.from('reviews').select('id, from_user_id, rating, comment, created_at')
-      .eq('to_user_id', user.id).order('created_at', { ascending: false }).limit(10)
+      .eq('to_user_id', targetUserId).order('created_at', { ascending: false }).limit(10)
       .then(async ({ data }) => {
-        if (!data || data.length === 0) return;
+        if (!data || data.length === 0) { setReviews([]); return; }
         const enriched: ReviewData[] = [];
         for (const r of data) {
           const { data: p } = await supabase.from('profiles').select('first_name, last_name').eq('id', r.from_user_id).single();
@@ -44,7 +90,7 @@ const Profile = () => {
         }
         setReviews(enriched);
       });
-  }, [user]);
+  }, [targetUserId]);
 
   const handleLogout = async () => {
     await signOut();
@@ -79,7 +125,7 @@ const Profile = () => {
               )}
             </div>
 
-            {!isProfileComplete ? (
+            {isOwnProfile && !isProfileComplete ? (
               <div className="mt-4 space-y-3">
                 <p className="text-sm text-muted-foreground">Tu perfil está incompleto.</p>
                 <Button onClick={() => navigate('/edit-profile')} className="gradient-accent text-primary-foreground rounded-xl gap-2">
@@ -94,12 +140,12 @@ const Profile = () => {
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isDriver ? 'Chofer' : 'Pasajero/a'}
-                  {profile?.city && ` · ${profile.city}`}
+                  {profile?.city && ` · ${formatCity(profile.city)}`}
                 </p>
                 {profile?.verified && (
-                  <div className="flex items-center justify-center gap-1 mt-1">
-                    <Shield className="h-3 w-3 text-accent" />
-                    <span className="text-[10px] text-accent font-medium">Perfil verificado</span>
+                  <div className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/30">
+                    <ShieldCheck className="h-3.5 w-3.5 text-accent" />
+                    <span className="text-[11px] text-accent font-semibold">Perfil verificado</span>
                   </div>
                 )}
 
@@ -127,9 +173,11 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <Button variant="ghost" size="sm" onClick={() => navigate('/edit-profile')} className="mt-2 text-xs text-primary gap-1">
-                  <Edit className="h-3 w-3" /> Editar perfil
-                </Button>
+                {isOwnProfile && (
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/edit-profile')} className="mt-2 text-xs text-primary gap-1">
+                    <Edit className="h-3 w-3" /> Editar perfil
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -140,29 +188,31 @@ const Profile = () => {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
             <div className="bg-card rounded-2xl p-4 border border-border">
               <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">Vehículo</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-3">
-                  <Car className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span>{driverProfile.vehicle}</span>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Car className="h-5 w-5 text-primary" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground ml-7">Patente: <span className="font-medium text-foreground">{driverProfile.plate}</span></span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{driverProfile.vehicle}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {driverProfile.color ? `Color ${driverProfile.color.toLowerCase()} · ` : ''}Patente {driverProfile.plate}
+                  </p>
+                  {driverProfile.accepts_pets && (
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <PawPrint className="h-3.5 w-3.5 text-accent" />
+                      <span className="text-[11px] text-muted-foreground">
+                        Acepta mascotas
+                        {driverProfile.pet_sizes_accepted?.length > 0 && (
+                          <> ({driverProfile.pet_sizes_accepted.map(s => PET_SIZE_LABELS[s] || s).join(', ')})</>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {driverProfile.accepts_pets && (
-                  <div className="flex items-center gap-3">
-                    <PawPrint className="h-4 w-4 text-accent shrink-0" />
-                    <span className="text-xs">
-                      Acepta mascotas
-                      {driverProfile.pet_sizes_accepted?.length > 0 && (
-                        <> ({driverProfile.pet_sizes_accepted.map(s => PET_SIZE_LABELS[s] || s).join(', ')})</>
-                      )}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           </motion.div>
-        ) : !isDriver ? (
+        ) : isOwnProfile && !isDriver ? (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
             <div className="bg-card rounded-2xl p-4 border border-border text-center space-y-3">
               <Car className="h-8 w-8 text-muted-foreground mx-auto" />
@@ -174,21 +224,15 @@ const Profile = () => {
           </motion.div>
         ) : null}
 
-        {/* Personal info */}
-        {isProfileComplete && (
+        {/* Account info — only own profile (privacy) */}
+        {isOwnProfile && isProfileComplete && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
             <div className="bg-card rounded-2xl p-4 border border-border space-y-3">
-              <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider">Datos personales</h3>
+              <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider">Información de cuenta</h3>
               <div className="flex items-center gap-3 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>{user?.email}</span>
+                <span className="truncate">{user?.email}</span>
               </div>
-              {profile?.phone && (
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span>{profile.phone}</span>
-                </div>
-              )}
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span>Miembro desde {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }) : '-'}</span>
@@ -201,7 +245,9 @@ const Profile = () => {
         {reviews.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
             <div className="bg-card rounded-2xl p-4 border border-border">
-              <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">Qué dicen de vos</h3>
+              <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                {isOwnProfile ? 'Qué dicen de vos' : 'Qué dicen sus pasajeros'}
+              </h3>
               <div className="space-y-2">
                 {reviews.map(r => (
                   <div key={r.id} className="bg-secondary/60 rounded-xl p-3">
@@ -220,19 +266,22 @@ const Profile = () => {
           </motion.div>
         )}
 
-        <div className="space-y-2 pt-1">
-          {isAdmin && (
-            <Button variant="outline" className="w-full h-12 gap-2 rounded-xl border-accent/40 text-accent hover:text-accent" onClick={() => navigate('/admin')}>
-              <ShieldCheck className="h-4 w-4" /> Panel admin
+        {/* Actions — own profile only */}
+        {isOwnProfile && (
+          <div className="space-y-2 pt-1">
+            {isAdmin && (
+              <Button variant="outline" className="w-full h-12 gap-2 rounded-xl border-accent/40 text-accent hover:text-accent" onClick={() => navigate('/admin')}>
+                <ShieldCheck className="h-4 w-4" /> Panel admin
+              </Button>
+            )}
+            <Button variant="outline" className="w-full h-12 gap-2 rounded-xl" onClick={() => navigate('/settings')}>
+              <Settings className="h-4 w-4" /> Configuración
             </Button>
-          )}
-          <Button variant="outline" className="w-full h-12 gap-2 rounded-xl" onClick={() => navigate('/settings')}>
-            <Settings className="h-4 w-4" /> Configuración
-          </Button>
-          <Button variant="outline" className="w-full h-12 gap-2 rounded-xl text-destructive hover:text-destructive" onClick={handleLogout}>
-            <LogOut className="h-4 w-4" /> Cerrar sesión
-          </Button>
-        </div>
+            <Button variant="outline" className="w-full h-12 gap-2 rounded-xl text-destructive hover:text-destructive" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" /> Cerrar sesión
+            </Button>
+          </div>
+        )}
       </div>
 
       <BottomNav role={isDriver ? 'driver' : 'passenger'} />

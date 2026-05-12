@@ -21,6 +21,7 @@ export interface ProfileData {
 export interface DriverProfileData {
   vehicle: string;
   plate: string;
+  color: string | null;
   max_seats: number;
   accepts_pets: boolean;
   pet_sizes_accepted: string[];

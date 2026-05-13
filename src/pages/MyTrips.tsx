@@ -310,6 +310,7 @@ const MyTrips = () => {
       if (!ok) return;
     }
     await handleTripAction(tripId, 'in_progress');
+  };
 
   const handleCancelRequest = async (id: string) => {
     setActionLoading(id);

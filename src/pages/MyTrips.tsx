@@ -607,7 +607,7 @@ const MyTrips = () => {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="history" className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Historial</TabsTrigger>
-                {isDriver && <TabsTrigger value="driver" className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Publicados</TabsTrigger>}
+                <TabsTrigger value="driver" className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Publicados</TabsTrigger>
               </TabsList>
             </div>
 

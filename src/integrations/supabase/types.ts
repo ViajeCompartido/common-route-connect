@@ -306,6 +306,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          data: Json
+          id: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -520,6 +553,51 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_offers: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          driver_id: string
+          id: string
+          initiated_by: string
+          message: string | null
+          passenger_id: string
+          ride_request_id: string | null
+          seats: number
+          status: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          driver_id: string
+          id?: string
+          initiated_by: string
+          message?: string | null
+          passenger_id: string
+          ride_request_id?: string | null
+          seats?: number
+          status?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          driver_id?: string
+          id?: string
+          initiated_by?: string
+          message?: string | null
+          passenger_id?: string
+          ride_request_id?: string | null
+          seats?: number
+          status?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trips: {
         Row: {
           accepts_pets: boolean
@@ -615,6 +693,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_trip_offer: { Args: { _offer_id: string }; Returns: string }
       add_driver_role: { Args: never; Returns: undefined }
       booking_occupies_seat: {
         Args: { _status: Database["public"]["Enums"]["booking_status"] }
@@ -636,6 +715,16 @@ export type Database = {
         Args: { _reason: string; _trip_id: string }
         Returns: Json
       }
+      create_trip_offer: {
+        Args: {
+          _message?: string
+          _passenger_id: string
+          _ride_request_id?: string
+          _seats?: number
+          _trip_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -649,6 +738,10 @@ export type Database = {
       }
       mark_refund_completed: {
         Args: { _cancellation_id: string; _notes?: string }
+        Returns: undefined
+      }
+      reject_trip_offer: {
+        Args: { _offer_id: string; _reason?: string }
         Returns: undefined
       }
       sync_trip_seat_counters: {

@@ -303,6 +303,15 @@ const MyTrips = () => {
     setDriverTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: newStatus } : t));
   };
 
+  const startTripAsDriver = async (tripId: string) => {
+    const hasPax = await hasActiveBookings(tripId);
+    if (!hasPax) {
+      const ok = window.confirm('Este viaje todavía no tiene pasajeros reservados. ¿Querés iniciarlo igual?');
+      if (!ok) return;
+    }
+    await handleTripAction(tripId, 'in_progress');
+  };
+
   const handleCancelRequest = async (id: string) => {
     setActionLoading(id);
     const { error } = await supabase.from('ride_requests').update({ status: 'cancelled' }).eq('id', id);
@@ -389,13 +398,20 @@ const MyTrips = () => {
   const isItemExpired = (date: string, time: string) => isTripExpired(date, time);
 
   const activeBookings = bookings.filter(b =>
-    ['pending', 'accepted', 'coordinating', 'paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && !isItemExpired(b.date, b.time)
+    ['accepted', 'coordinating', 'paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && !isItemExpired(b.date, b.time)
+  );
+  const pendingBookings = bookings.filter(b =>
+    b.status === 'pending' && !isItemExpired(b.date, b.time)
   );
   const pastBookings = bookings.filter(b =>
     ['completed', 'cancelled_passenger', 'cancelled_driver', 'rejected'].includes(b.status) || isItemExpired(b.date, b.time)
   );
-  const activeDriverTrips = driverTrips.filter(t =>
-    ['active', 'paused', 'full', 'in_progress'].includes(t.status) && !isItemExpired(t.date, t.time)
+  const tripHasReservations = (t: TripRow) => (t.total_seats - t.available_seats) > 0;
+  const publishedDriverTrips = driverTrips.filter(t =>
+    ['active', 'paused', 'full'].includes(t.status) && !tripHasReservations(t) && !isItemExpired(t.date, t.time)
+  );
+  const confirmedDriverTrips = driverTrips.filter(t =>
+    ((['active', 'paused', 'full'].includes(t.status) && tripHasReservations(t)) || t.status === 'in_progress') && !isItemExpired(t.date, t.time)
   );
   const pastDriverTrips = driverTrips.filter(t =>
     ['completed', 'cancelled'].includes(t.status) || isItemExpired(t.date, t.time)
@@ -403,7 +419,7 @@ const MyTrips = () => {
   const activeRequests = rideRequests.filter(r => r.status === 'active' && !isItemExpired(r.date, r.time));
   const pastRequests = rideRequests.filter(r => r.status !== 'active' || isItemExpired(r.date, r.time));
 
-  const totalActive = activeBookings.length + activeRequests.length;
+  const totalActive = activeBookings.length + confirmedDriverTrips.length;
 
   // Friendly date formatter (Hoy / Mañana / dd MMM)
   const friendlyDate = (dateStr: string) => {
@@ -426,6 +442,135 @@ const MyTrips = () => {
     const d = new Date(); d.setHours(h || 0, m || 0, 0, 0);
     d.setHours(d.getHours() + 6);
     return d.toTimeString().slice(0,5);
+  };
+
+  const renderDriverTripCard = (t: TripRow, i: number) => {
+    const ts = tripStatusConfig[t.status] ?? tripStatusConfig.active;
+    return (
+      <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+        <div className="bg-card rounded-2xl p-4 border border-border">
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <p className="font-semibold text-sm font-heading">{t.origin} → {t.destination}</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {t.date} · {t.time}hs</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {['active', 'paused'].includes(t.status) && (
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditTrip(t)}>
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              )}
+              <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${ts.color}`}>{ts.label}</Badge>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mb-3">
+            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> Totales: {t.total_seats}</span>
+            <span>Reservados: {getSeatSummary(t.total_seats, t.available_seats).occupiedSeats}</span>
+            <span>Disponibles: {t.available_seats}</span>
+            <span className="font-heading font-bold text-primary">{formatPrice(Number(t.price_per_seat))}/asiento</span>
+          </div>
+
+          {['active', 'full'].includes(t.status) && t.available_seats > 0 && (
+            <CompatiblePassengersBlock
+              tripId={t.id}
+              origin={t.origin}
+              destination={t.destination}
+              date={t.date}
+              time={t.time}
+              availableSeats={t.available_seats}
+            />
+          )}
+
+          {(() => {
+            const passengers = tripPassengers[t.id] ?? [];
+            if (passengers.length === 0) {
+              return (
+                <div className="bg-muted/30 rounded-xl p-3 mb-3 text-[11px] text-muted-foreground text-center">
+                  Todavía no hay pasajeros reservados.
+                </div>
+              );
+            }
+            const payLabel = (s: string): { label: string; className: string } => {
+              if (s === 'completed' || s === 'held') return { label: 'Pagado', className: 'bg-accent/15 text-accent border-accent/30' };
+              if (s === 'refunded') return { label: 'Reembolsado', className: 'bg-muted text-muted-foreground border-border' };
+              if (s === 'failed') return { label: 'Fallido', className: 'bg-destructive/15 text-destructive border-destructive/30' };
+              return { label: 'Pago pendiente', className: 'bg-amber-500/15 text-amber-700 border-amber-500/30' };
+            };
+            return (
+              <div className="bg-muted/30 rounded-xl p-3 mb-3 space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Pasajeros reservados ({passengers.length})</p>
+                {passengers.map(p => {
+                  const pay = payLabel(p.payment_status);
+                  return (
+                    <div key={p.booking_id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading font-bold text-xs shrink-0 overflow-hidden">
+                        {p.avatar_url
+                          ? <img src={p.avatar_url} alt={p.passenger_name} className="w-full h-full object-cover" />
+                          : (p.passenger_name?.[0]?.toUpperCase() ?? 'P')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold truncate">{p.passenger_name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <span className="text-[10px] text-muted-foreground"><Armchair className="h-2.5 w-2.5 inline mr-0.5" />{p.seats}</span>
+                          <Badge className={`text-[9px] gap-1 rounded-full px-1.5 py-0 border ${pay.className}`}>{pay.label}</Badge>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" className="h-8 w-8 p-0 rounded-lg border-primary/30 text-primary shrink-0"
+                        onClick={() => navigate(`/chat/${p.booking_id}`)}>
+                        <MessageCircle className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          <div className="flex gap-2 flex-wrap">
+            <Button size="sm" variant="outline" className="flex-1 h-9 rounded-xl gap-1 text-xs" onClick={() => navigate('/driver-requests')}>Solicitudes</Button>
+            {t.status === 'active' && (
+              <>
+                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'paused')}><Pause className="h-3 w-3" /> Pausar</Button>
+                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'full')}><Ban className="h-3 w-3" /> Marcar como lleno</Button>
+              </>
+            )}
+            {t.status === 'paused' && (
+              <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'active')}><Play className="h-3 w-3" /> Reactivar</Button>
+            )}
+            {t.status === 'full' && (
+              <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id || t.available_seats === 0} onClick={() => handleTripAction(t.id, 'active')}>
+                <Play className="h-3 w-3" /> Volver a mostrar viaje
+              </Button>
+            )}
+            {['active', 'paused', 'full'].includes(t.status) && (
+              <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => startTripAsDriver(t.id)}><Car className="h-3 w-3" /> Iniciar viaje</Button>
+            )}
+            {t.status === 'in_progress' && (
+              <>
+                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-secondary text-secondary-foreground hover:bg-secondary/80" disabled={actionLoading === t.id} onClick={async () => {
+                  setActionLoading(t.id);
+                  await supabase.from('bookings').update({ status: 'driver_arrived' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'paid']);
+                  setActionLoading(null);
+                  toast.success('Llegaste al punto de encuentro.');
+                }}><MapPinCheck className="h-3 w-3" /> Llegué</Button>
+                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-primary text-primary-foreground hover:bg-primary/90" disabled={actionLoading === t.id} onClick={async () => {
+                  setActionLoading(t.id);
+                  await supabase.from('bookings').update({ status: 'in_transit' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'driver_arrived', 'paid']);
+                  setActionLoading(null);
+                  toast.success('Viaje en curso.');
+                }}><Route className="h-3 w-3" /> En viaje</Button>
+                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar viaje</Button>
+              </>
+            )}
+            {['active', 'paused', 'full'].includes(t.status) && (
+              <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === t.id} onClick={() => setCancelTripConfirm(t)}>
+                <XCircle className="h-3 w-3" /> Cancelar viaje
+              </Button>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
@@ -462,50 +607,18 @@ const MyTrips = () => {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="history" className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Historial</TabsTrigger>
-                {isDriver && <TabsTrigger value="driver" className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Publicados</TabsTrigger>}
+                <TabsTrigger value="driver" className="shrink-0 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Publicados</TabsTrigger>
               </TabsList>
             </div>
 
             <TabsContent value="active" className="space-y-3">
               <OffersInbox scope="asPassenger" />
-              {activeRequests.map((r, i) => (
-                <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <div className="bg-card rounded-2xl p-4 border border-accent/30">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <Hand className="h-3.5 w-3.5 text-accent" />
-                        <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">Busco viaje</span>
-                      </div>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditRequest(r)}>
-                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                    </div>
-                    <p className="font-semibold text-sm font-heading">{r.origin} → {r.destination}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {r.date} · {r.time}hs</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span><Users className="h-3 w-3 inline" /> {r.seats} persona{r.seats > 1 ? 's' : ''}</span>
-                      {r.has_pet && <span><PawPrint className="h-3 w-3 inline" /> Mascota</span>}
-                      {r.has_luggage && <span><Luggage className="h-3 w-3 inline" /> Equipaje</span>}
-                    </div>
-                    <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30 mt-3"
-                      disabled={actionLoading === r.id} onClick={() => handleCancelRequest(r.id)}>
-                      <XCircle className="h-3 w-3" /> Cancelar
-                    </Button>
-                    <CompatibleTripsBlock
-                      requestId={r.id}
-                      origin={r.origin}
-                      destination={r.destination}
-                      date={r.date}
-                      time={r.time}
-                      seats={r.seats}
-                      currentUserId={user?.id}
-                    />
-                  </div>
-                </motion.div>
-              ))}
+              {isDriver && <OffersInbox scope="asDriver" />}
 
-              {activeBookings.length === 0 && activeRequests.length === 0 ? (
-                <div className="text-center py-12"><p className="text-muted-foreground text-sm">No tenés viajes activos.</p></div>
+              {confirmedDriverTrips.map((t, i) => renderDriverTripCard(t, i))}
+
+              {activeBookings.length === 0 && confirmedDriverTrips.length === 0 ? (
+                <div className="text-center py-12"><p className="text-muted-foreground text-sm">No tenés viajes activos. Cuando se confirme una reserva, vas a verla acá.</p></div>
               ) : activeBookings.map((b, i) => {
                 const sc = bookingStatusConfig[b.status] ?? bookingStatusConfig.pending;
                 const StatusIcon = sc.icon;
@@ -656,171 +769,78 @@ const MyTrips = () => {
               })}
             </TabsContent>
 
-            {isDriver && (
-              <TabsContent value="driver" className="space-y-3">
-                <OffersInbox scope="asDriver" />
-                {activeDriverTrips.length === 0 && pastDriverTrips.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-sm">No publicaste viajes todavía.</p>
-                    <Button size="sm" className="mt-3 rounded-xl gradient-accent text-primary-foreground" onClick={() => navigate('/publish')}>Publicar viaje</Button>
+            <TabsContent value="driver" className="space-y-3">
+              {activeRequests.map((r, i) => (
+                <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                  <div className="bg-card rounded-2xl p-4 border border-accent/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <Hand className="h-3.5 w-3.5 text-accent" />
+                        <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">Busco viaje · Publicado</span>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditRequest(r)}>
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
+                    <p className="font-semibold text-sm font-heading">{r.origin} → {r.destination}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {r.date} · {r.time}hs</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                      <span><Users className="h-3 w-3 inline" /> {r.seats} persona{r.seats > 1 ? 's' : ''}</span>
+                      {r.has_pet && <span><PawPrint className="h-3 w-3 inline" /> Mascota</span>}
+                      {r.has_luggage && <span><Luggage className="h-3 w-3 inline" /> Equipaje</span>}
+                    </div>
+                    <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30 mt-3"
+                      disabled={actionLoading === r.id} onClick={() => handleCancelRequest(r.id)}>
+                      <XCircle className="h-3 w-3" /> Cancelar
+                    </Button>
+                    <CompatibleTripsBlock
+                      requestId={r.id}
+                      origin={r.origin}
+                      destination={r.destination}
+                      date={r.date}
+                      time={r.time}
+                      seats={r.seats}
+                      currentUserId={user?.id}
+                    />
                   </div>
-                ) : (
-                  <>
-                    {activeDriverTrips.map((t, i) => {
-                      const ts = tripStatusConfig[t.status] ?? tripStatusConfig.active;
-                      return (
-                        <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                          <div className="bg-card rounded-2xl p-4 border border-border">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <p className="font-semibold text-sm font-heading">{t.origin} → {t.destination}</p>
-                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {t.date} · {t.time}hs</p>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                {['active', 'paused'].includes(t.status) && (
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditTrip(t)}>
-                                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                                  </Button>
-                                )}
-                                <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${ts.color}`}>{ts.label}</Badge>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mb-3">
-                              <span className="flex items-center gap-1"><Users className="h-3 w-3" /> Totales: {t.total_seats}</span>
-                              <span>Reservados: {getSeatSummary(t.total_seats, t.available_seats).occupiedSeats}</span>
-                              <span>Disponibles: {t.available_seats}</span>
-                              <span className="font-heading font-bold text-primary">{formatPrice(Number(t.price_per_seat))}/asiento</span>
-                            </div>
+                </motion.div>
+              ))}
 
-                            {['active', 'full'].includes(t.status) && t.available_seats > 0 && (
-                              <CompatiblePassengersBlock
-                                tripId={t.id}
-                                origin={t.origin}
-                                destination={t.destination}
-                                date={t.date}
-                                time={t.time}
-                                availableSeats={t.available_seats}
-                              />
-                            )}
-
-                            {/* Passengers list (driver view) */}
-                            {(() => {
-                              const passengers = tripPassengers[t.id] ?? [];
-                              if (passengers.length === 0) {
-                                return (
-                                  <div className="bg-muted/30 rounded-xl p-3 mb-3 text-[11px] text-muted-foreground text-center">
-                                    Todavía no hay pasajeros reservados.
-                                  </div>
-                                );
-                              }
-                              const payLabel = (s: string): { label: string; className: string } => {
-                                if (s === 'completed' || s === 'held') return { label: 'Pagado', className: 'bg-accent/15 text-accent border-accent/30' };
-                                if (s === 'refunded') return { label: 'Reembolsado', className: 'bg-muted text-muted-foreground border-border' };
-                                if (s === 'failed') return { label: 'Fallido', className: 'bg-destructive/15 text-destructive border-destructive/30' };
-                                return { label: 'Pago pendiente', className: 'bg-amber-500/15 text-amber-700 border-amber-500/30' };
-                              };
-                              return (
-                                <div className="bg-muted/30 rounded-xl p-3 mb-3 space-y-2">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Pasajeros reservados ({passengers.length})</p>
-                                  {passengers.map(p => {
-                                    const pay = payLabel(p.payment_status);
-                                    return (
-                                      <div key={p.booking_id} className="flex items-center gap-2 bg-card rounded-lg p-2 border border-border">
-                                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading font-bold text-xs shrink-0 overflow-hidden">
-                                          {p.avatar_url
-                                            ? <img src={p.avatar_url} alt={p.passenger_name} className="w-full h-full object-cover" />
-                                            : (p.passenger_name?.[0]?.toUpperCase() ?? 'P')}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-semibold truncate">{p.passenger_name}</p>
-                                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                            <span className="text-[10px] text-muted-foreground"><Armchair className="h-2.5 w-2.5 inline mr-0.5" />{p.seats}</span>
-                                            <Badge className={`text-[9px] gap-1 rounded-full px-1.5 py-0 border ${pay.className}`}>{pay.label}</Badge>
-                                          </div>
-                                        </div>
-                                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 rounded-lg border-primary/30 text-primary shrink-0"
-                                          onClick={() => navigate(`/chat/${p.booking_id}`)}>
-                                          <MessageCircle className="h-3.5 w-3.5" />
-                                        </Button>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })()}
-
-                            <div className="flex gap-2 flex-wrap">
-                              <Button size="sm" variant="outline" className="flex-1 h-9 rounded-xl gap-1 text-xs" onClick={() => navigate('/driver-requests')}>Solicitudes</Button>
-                              {t.status === 'active' && (
-                                <>
-                                  <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'paused')}><Pause className="h-3 w-3" /> Pausar</Button>
-                                  <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'full')}><Ban className="h-3 w-3" /> Marcar como lleno</Button>
-                                </>
-                              )}
-                              {t.status === 'paused' && (
-                                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'active')}><Play className="h-3 w-3" /> Reactivar</Button>
-                              )}
-                              {t.status === 'full' && (
-                                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id || t.available_seats === 0} onClick={() => handleTripAction(t.id, 'active')}>
-                                  <Play className="h-3 w-3" /> Volver a mostrar viaje
-                                </Button>
-                              )}
-                              {['active', 'paused', 'full'].includes(t.status) && (
-                                <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'in_progress')}><Car className="h-3 w-3" /> En camino</Button>
-                              )}
-                              {t.status === 'in_progress' && (
-                                <>
-                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-secondary text-secondary-foreground hover:bg-secondary/80" disabled={actionLoading === t.id} onClick={async () => {
-                                    setActionLoading(t.id);
-                                    await supabase.from('bookings').update({ status: 'driver_arrived' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'paid']);
-                                    setActionLoading(null);
-                                    toast.success('Llegaste al punto de encuentro.');
-                                  }}><MapPinCheck className="h-3 w-3" /> Llegué</Button>
-                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-primary text-primary-foreground hover:bg-primary/90" disabled={actionLoading === t.id} onClick={async () => {
-                                    setActionLoading(t.id);
-                                    await supabase.from('bookings').update({ status: 'in_transit' as any }).eq('trip_id', t.id).in('status', ['driver_on_way', 'driver_arrived', 'paid']);
-                                    setActionLoading(null);
-                                    toast.success('Viaje iniciado.');
-                                  }}><Route className="h-3 w-3" /> Iniciar viaje</Button>
-                                  <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar viaje</Button>
-                                </>
-                              )}
-                              {['active', 'paused', 'full'].includes(t.status) && (
-                                <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === t.id} onClick={() => setCancelTripConfirm(t)}>
-                                  <XCircle className="h-3 w-3" /> Cancelar viaje
-                                </Button>
-                              )}
+              {publishedDriverTrips.length === 0 && activeRequests.length === 0 && pastDriverTrips.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground text-sm">No tenés publicaciones todavía.</p>
+                  {isDriver && (
+                    <Button size="sm" className="mt-3 rounded-xl gradient-accent text-primary-foreground" onClick={() => navigate('/publish')}>Publicar viaje</Button>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {publishedDriverTrips.map((t, i) => renderDriverTripCard(t, i))}
+                  {pastDriverTrips.length > 0 && (
+                    <>
+                      <p className="text-xs text-muted-foreground font-semibold pt-2">Anteriores</p>
+                      {pastDriverTrips.map(t => {
+                        const derivedKey = t.status === 'cancelled'
+                          ? 'cancelled'
+                          : t.status === 'completed'
+                            ? 'completed'
+                            : 'expired';
+                        const ts = tripStatusConfig[derivedKey];
+                        return (
+                          <div key={t.id} className="bg-card rounded-2xl p-4 border border-border opacity-70">
+                            <div className="flex items-start justify-between mb-1">
+                              <p className="font-semibold text-sm font-heading">{t.origin} → {t.destination}</p>
+                              <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${ts.color}`}>{ts.label}</Badge>
                             </div>
+                            <p className="text-xs text-muted-foreground">{t.date} · {t.time}hs</p>
                           </div>
-                        </motion.div>
-                      );
-                    })}
-                    {pastDriverTrips.length > 0 && (
-                      <>
-                        <p className="text-xs text-muted-foreground font-semibold pt-2">Finalizados</p>
-                        {pastDriverTrips.map(t => {
-                          const derivedKey = t.status === 'cancelled'
-                            ? 'cancelled'
-                            : t.status === 'completed'
-                              ? 'completed'
-                              : 'expired';
-                          const ts = tripStatusConfig[derivedKey];
-                          return (
-                            <div key={t.id} className="bg-card rounded-2xl p-4 border border-border opacity-70">
-                              <div className="flex items-start justify-between mb-1">
-                                <p className="font-semibold text-sm font-heading">{t.origin} → {t.destination}</p>
-                                <Badge className={`text-[10px] gap-1 rounded-full px-2 py-0.5 border ${ts.color}`}>{ts.label}</Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{t.date} · {t.time}hs</p>
-                            </div>
-                          );
-                        })}
-                      </>
-                    )}
-                  </>
-                )}
-              </TabsContent>
-            )}
+                        );
+                      })}
+                    </>
+                  )}
+                </>
+              )}
+            </TabsContent>
           </Tabs>
         )}
       </div>

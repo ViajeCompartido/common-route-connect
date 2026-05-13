@@ -691,6 +691,17 @@ const MyTrips = () => {
                               <span className="font-heading font-bold text-primary">{formatPrice(Number(t.price_per_seat))}/asiento</span>
                             </div>
 
+                            {['active', 'full'].includes(t.status) && t.available_seats > 0 && (
+                              <CompatiblePassengersBlock
+                                tripId={t.id}
+                                origin={t.origin}
+                                destination={t.destination}
+                                date={t.date}
+                                time={t.time}
+                                availableSeats={t.available_seats}
+                              />
+                            )}
+
                             {/* Passengers list (driver view) */}
                             {(() => {
                               const passengers = tripPassengers[t.id] ?? [];

@@ -4,12 +4,15 @@ import { Menu, Bell } from 'lucide-react';
 import weegoLogo from '@/assets/weego-logo.png';
 import SideMenu from '@/components/SideMenu';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const AppHeader = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const { totalUnread } = useUnreadMessages();
-  const hasUnread = totalUnread > 0;
+  const { unreadCount } = useNotifications();
+  const totalBadge = totalUnread + unreadCount;
+  const hasUnread = totalBadge > 0;
 
   return (
     <>
@@ -36,7 +39,9 @@ const AppHeader = () => {
           >
             <Bell className="h-5 w-5" />
             {hasUnread && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center border-2 border-card">
+                {totalBadge > 99 ? '99+' : totalBadge}
+              </span>
             )}
           </button>
         </div>
@@ -46,3 +51,4 @@ const AppHeader = () => {
 };
 
 export default AppHeader;
+

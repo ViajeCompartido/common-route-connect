@@ -80,11 +80,12 @@ const bookingStatusConfig: Record<string, { label: string; color: string; icon: 
 };
 
 const tripStatusConfig: Record<string, { label: string; color: string }> = {
-  active: { label: 'Activo', color: 'bg-green-500/15 text-green-700 border-green-500/30' },
+  active: { label: 'Publicado', color: 'bg-green-500/15 text-green-700 border-green-500/30' },
   paused: { label: 'Pausado', color: 'bg-amber-500/15 text-amber-700 border-amber-500/30' },
   full: { label: 'Lleno', color: 'bg-blue-500/15 text-blue-700 border-blue-500/30' },
   in_progress: { label: 'En curso', color: 'bg-sky-500/15 text-sky-700 border-sky-500/30' },
   completed: { label: 'Finalizado', color: 'bg-muted text-muted-foreground border-border' },
+  expired: { label: 'Vencido', color: 'bg-muted text-muted-foreground border-border' },
   cancelled: { label: 'Cancelado', color: 'bg-destructive/15 text-destructive border-destructive/30' },
 };
 

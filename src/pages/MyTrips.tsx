@@ -28,6 +28,8 @@ import { formatPrice } from '@/lib/formatPrice';
 import CancelBookingDialog from '@/components/CancelBookingDialog';
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 import { clampSeatCount, getSeatSummary, MAX_DRIVER_VEHICLE_SEATS } from '@/lib/seatUtils';
+import { CompatiblePassengersBlock, CompatibleTripsBlock } from '@/components/CompatibleMatchesSection';
+import OffersInbox from '@/components/OffersInbox';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;
@@ -464,6 +466,7 @@ const MyTrips = () => {
             </div>
 
             <TabsContent value="active" className="space-y-3">
+              <OffersInbox scope="asPassenger" />
               {activeRequests.map((r, i) => (
                 <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                   <div className="bg-card rounded-2xl p-4 border border-accent/30">
@@ -487,6 +490,15 @@ const MyTrips = () => {
                       disabled={actionLoading === r.id} onClick={() => handleCancelRequest(r.id)}>
                       <XCircle className="h-3 w-3" /> Cancelar
                     </Button>
+                    <CompatibleTripsBlock
+                      requestId={r.id}
+                      origin={r.origin}
+                      destination={r.destination}
+                      date={r.date}
+                      time={r.time}
+                      seats={r.seats}
+                      currentUserId={user?.id}
+                    />
                   </div>
                 </motion.div>
               ))}
@@ -645,6 +657,7 @@ const MyTrips = () => {
 
             {isDriver && (
               <TabsContent value="driver" className="space-y-3">
+                <OffersInbox scope="asDriver" />
                 {activeDriverTrips.length === 0 && pastDriverTrips.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground text-sm">No publicaste viajes todavía.</p>
@@ -677,6 +690,17 @@ const MyTrips = () => {
                               <span>Disponibles: {t.available_seats}</span>
                               <span className="font-heading font-bold text-primary">{formatPrice(Number(t.price_per_seat))}/asiento</span>
                             </div>
+
+                            {['active', 'full'].includes(t.status) && t.available_seats > 0 && (
+                              <CompatiblePassengersBlock
+                                tripId={t.id}
+                                origin={t.origin}
+                                destination={t.destination}
+                                date={t.date}
+                                time={t.time}
+                                availableSeats={t.available_seats}
+                              />
+                            )}
 
                             {/* Passengers list (driver view) */}
                             {(() => {

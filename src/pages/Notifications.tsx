@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { ArrowLeft, Bell, CheckCircle2, XCircle, Megaphone } from 'lucide-react';
+import { ArrowLeft, Bell, CheckCircle2, XCircle, Megaphone, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 import { getLastSeenMap } from '@/hooks/useUnreadMessages';
 import { getInitial } from '@/lib/avatarUtils';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface ChatNotification {
   kind: 'chat';
@@ -51,8 +52,11 @@ const getItemDate = (n: NotificationItem) =>
 const Notifications = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { items: dbNotifs, markAsRead, markAllAsRead } = useNotifications();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => { void markAllAsRead(); }, [markAllAsRead]);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -164,10 +168,23 @@ const Notifications = () => {
       });
     }
 
+    // Add database notifications (offers, etc)
+    for (const n of dbNotifs) {
+      list.push({
+        kind: 'system',
+        id: `n-${n.id}`,
+        type: n.type === 'offer_rejected' ? 'cancellation' : 'booking',
+        title: n.title,
+        description: n.body ?? '',
+        createdAt: n.created_at,
+        href: n.data?.booking_id ? `/chat/${n.data.booking_id}` : (n.data?.trip_id ? `/trip/${n.data.trip_id}` : '/my-trips'),
+      });
+    }
+
     list.sort((a, b) => new Date(getItemDate(b)).getTime() - new Date(getItemDate(a)).getTime());
     setItems(list.slice(0, 50));
     setLoading(false);
-  }, [user]);
+  }, [user, dbNotifs]);
 
   useEffect(() => { void load(); }, [load]);
 

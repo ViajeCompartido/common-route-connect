@@ -603,6 +603,9 @@ export type Database = {
           accepts_pets: boolean
           allows_luggage: boolean
           available_seats: number
+          cancelled_at: string | null
+          cancelled_by_user: boolean
+          cancelled_by_user_id: string | null
           created_at: string
           date: string
           destination: string
@@ -625,6 +628,9 @@ export type Database = {
           accepts_pets?: boolean
           allows_luggage?: boolean
           available_seats: number
+          cancelled_at?: string | null
+          cancelled_by_user?: boolean
+          cancelled_by_user_id?: string | null
           created_at?: string
           date: string
           destination: string
@@ -647,6 +653,9 @@ export type Database = {
           accepts_pets?: boolean
           allows_luggage?: boolean
           available_seats?: number
+          cancelled_at?: string | null
+          cancelled_by_user?: boolean
+          cancelled_by_user_id?: string | null
           created_at?: string
           date?: string
           destination?: string
@@ -778,6 +787,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "in_progress"
+        | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -935,6 +945,7 @@ export const Constants = {
         "completed",
         "cancelled",
         "in_progress",
+        "expired",
       ],
     },
   },

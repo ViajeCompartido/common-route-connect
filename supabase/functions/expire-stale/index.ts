@@ -57,8 +57,8 @@ Deno.serve(async () => {
     .from("trips")
     .update({ status: "expired" })
     .eq("status", "active")
-    .eq("date", today)
-    .lt("time", cutoffTime)
+    .eq("date", cutoff.date === today ? today : "0001-01-01")
+    .lt("time", cutoff.time)
     .select("id", { count: "exact", head: true });
 
   const total =

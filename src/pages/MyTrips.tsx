@@ -41,6 +41,7 @@ interface TripRow {
   id: string; origin: string; destination: string; date: string; time: string;
   available_seats: number; total_seats: number; price_per_seat: number; status: string;
   accepts_pets: boolean; allows_luggage: boolean; created_at: string; observations: string | null;
+  cancelled_by_user?: boolean | null; cancelled_at?: string | null; cancelled_by_user_id?: string | null;
 }
 
 interface DriverTripPassenger {
@@ -87,6 +88,13 @@ const tripStatusConfig: Record<string, { label: string; color: string }> = {
   completed: { label: 'Finalizado', color: 'bg-muted text-muted-foreground border-border' },
   expired: { label: 'Vencido', color: 'bg-muted text-muted-foreground border-border' },
   cancelled: { label: 'Cancelado', color: 'bg-destructive/15 text-destructive border-destructive/30' },
+};
+
+const getRealTripStatus = (trip: TripRow, expired: boolean) => {
+  if (trip.status === 'cancelled') return trip.cancelled_by_user ? 'cancelled' : (expired ? 'expired' : 'active');
+  if (!trip.status) return expired ? 'expired' : 'active';
+  if (expired && !['completed', 'cancelled', 'in_progress'].includes(trip.status)) return 'expired';
+  return trip.status;
 };
 
 const MyTrips = () => {
@@ -275,6 +283,10 @@ const MyTrips = () => {
   };
 
   const handleTripAction = async (tripId: string, newStatus: string) => {
+    if (newStatus === 'cancelled') {
+      toast.error('Usá el botón Cancelar viaje para cancelar manualmente.');
+      return;
+    }
     setActionLoading(tripId);
     const { error } = await supabase.from('trips').update({ status: newStatus as any }).eq('id', tripId);
     if (error) { setActionLoading(null); toast.error('Error al actualizar.'); return; }

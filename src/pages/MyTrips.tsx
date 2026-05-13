@@ -489,6 +489,15 @@ const MyTrips = () => {
                       disabled={actionLoading === r.id} onClick={() => handleCancelRequest(r.id)}>
                       <XCircle className="h-3 w-3" /> Cancelar
                     </Button>
+                    <CompatibleTripsBlock
+                      requestId={r.id}
+                      origin={r.origin}
+                      destination={r.destination}
+                      date={r.date}
+                      time={r.time}
+                      seats={r.seats}
+                      currentUserId={user?.id}
+                    />
                   </div>
                 </motion.div>
               ))}

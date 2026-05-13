@@ -657,6 +657,7 @@ const MyTrips = () => {
 
             {isDriver && (
               <TabsContent value="driver" className="space-y-3">
+                <OffersInbox scope="asDriver" />
                 {activeDriverTrips.length === 0 && pastDriverTrips.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground text-sm">No publicaste viajes todavía.</p>

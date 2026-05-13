@@ -16,10 +16,27 @@ Deno.serve(async () => {
 
   // Also expire same-day requests where time + 40min has passed
   const now = new Date();
-  const today = now.toISOString().split("T")[0];
-  const cutoffTime = new Date(now.getTime() - 40 * 60 * 1000)
-    .toTimeString()
-    .slice(0, 8);
+  const argentinaParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const part = (type: string) => argentinaParts.find((p) => p.type === type)?.value ?? "00";
+  const today = `${part("year")}-${part("month")}-${part("day")}`;
+  const cutoffParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(now.getTime() - 40 * 60 * 1000));
+  const cutoffPart = (type: string) => cutoffParts.find((p) => p.type === type)?.value ?? "00";
+  const cutoffTime = `${cutoffPart("hour")}:${cutoffPart("minute")}:${cutoffPart("second")}`;
 
   const { count: reqTodayCount } = await supabase
     .from("ride_requests")

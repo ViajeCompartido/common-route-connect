@@ -477,14 +477,15 @@ const TripDetail = () => {
                 })}
               </div>
 
-              {/* Trip closed (full / cancelled / completed) message — only when user has no booking yet */}
-              {bookingStatus === 'none' && !rejected && ['full', 'cancelled', 'completed', 'in_progress'].includes(trip.status) && (
+              {/* Trip closed (full / cancelled / completed / expired) message — only when user has no booking yet */}
+              {bookingStatus === 'none' && !rejected && ['full', 'cancelled', 'completed', 'in_progress', 'expired'].includes(trip.status) && (
                 <div className="bg-muted/40 border border-border rounded-xl p-3 mb-4 flex items-center gap-2.5">
                   <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div>
                     <p className="text-xs font-semibold">
                       {trip.status === 'full' ? 'Viaje completo' :
                        trip.status === 'cancelled' ? 'Viaje cancelado' :
+                       trip.status === 'expired' ? 'Viaje vencido' :
                        trip.status === 'completed' ? 'Viaje finalizado' : 'Viaje en curso'}
                     </p>
                     <p className="text-[11px] text-muted-foreground">

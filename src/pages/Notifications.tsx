@@ -52,8 +52,11 @@ const getItemDate = (n: NotificationItem) =>
 const Notifications = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { items: dbNotifs, markAsRead, markAllAsRead } = useNotifications();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => { void markAllAsRead(); }, [markAllAsRead]);
 
   const load = useCallback(async () => {
     if (!user) return;

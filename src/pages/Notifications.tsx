@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { ArrowLeft, Bell, CheckCircle2, XCircle, Megaphone } from 'lucide-react';
+import { ArrowLeft, Bell, CheckCircle2, XCircle, Megaphone, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 import { getLastSeenMap } from '@/hooks/useUnreadMessages';
 import { getInitial } from '@/lib/avatarUtils';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface ChatNotification {
   kind: 'chat';

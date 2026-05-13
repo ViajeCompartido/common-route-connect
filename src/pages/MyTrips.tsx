@@ -613,44 +613,12 @@ const MyTrips = () => {
 
             <TabsContent value="active" className="space-y-3">
               <OffersInbox scope="asPassenger" />
-              {activeRequests.map((r, i) => (
-                <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <div className="bg-card rounded-2xl p-4 border border-accent/30">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <Hand className="h-3.5 w-3.5 text-accent" />
-                        <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">Busco viaje</span>
-                      </div>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditRequest(r)}>
-                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                    </div>
-                    <p className="font-semibold text-sm font-heading">{r.origin} → {r.destination}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {r.date} · {r.time}hs</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span><Users className="h-3 w-3 inline" /> {r.seats} persona{r.seats > 1 ? 's' : ''}</span>
-                      {r.has_pet && <span><PawPrint className="h-3 w-3 inline" /> Mascota</span>}
-                      {r.has_luggage && <span><Luggage className="h-3 w-3 inline" /> Equipaje</span>}
-                    </div>
-                    <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30 mt-3"
-                      disabled={actionLoading === r.id} onClick={() => handleCancelRequest(r.id)}>
-                      <XCircle className="h-3 w-3" /> Cancelar
-                    </Button>
-                    <CompatibleTripsBlock
-                      requestId={r.id}
-                      origin={r.origin}
-                      destination={r.destination}
-                      date={r.date}
-                      time={r.time}
-                      seats={r.seats}
-                      currentUserId={user?.id}
-                    />
-                  </div>
-                </motion.div>
-              ))}
+              {isDriver && <OffersInbox scope="asDriver" />}
 
-              {activeBookings.length === 0 && activeRequests.length === 0 ? (
-                <div className="text-center py-12"><p className="text-muted-foreground text-sm">No tenés viajes activos.</p></div>
+              {confirmedDriverTrips.map((t, i) => renderDriverTripCard(t, i))}
+
+              {activeBookings.length === 0 && confirmedDriverTrips.length === 0 ? (
+                <div className="text-center py-12"><p className="text-muted-foreground text-sm">No tenés viajes activos. Cuando se confirme una reserva, vas a verla acá.</p></div>
               ) : activeBookings.map((b, i) => {
                 const sc = bookingStatusConfig[b.status] ?? bookingStatusConfig.pending;
                 const StatusIcon = sc.icon;

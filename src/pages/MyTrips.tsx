@@ -28,6 +28,8 @@ import { formatPrice } from '@/lib/formatPrice';
 import CancelBookingDialog from '@/components/CancelBookingDialog';
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 import { clampSeatCount, getSeatSummary, MAX_DRIVER_VEHICLE_SEATS } from '@/lib/seatUtils';
+import { CompatiblePassengersBlock, CompatibleTripsBlock } from '@/components/CompatibleMatchesSection';
+import OffersInbox from '@/components/OffersInbox';
 
 interface BookingRow {
   id: string; trip_id: string; seats: number; status: string; price_per_seat: number;

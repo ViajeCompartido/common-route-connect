@@ -168,10 +168,23 @@ const Notifications = () => {
       });
     }
 
+    // Add database notifications (offers, etc)
+    for (const n of dbNotifs) {
+      list.push({
+        kind: 'system',
+        id: `n-${n.id}`,
+        type: n.type === 'offer_rejected' ? 'cancellation' : 'booking',
+        title: n.title,
+        description: n.body ?? '',
+        createdAt: n.created_at,
+        href: n.data?.booking_id ? `/chat/${n.data.booking_id}` : (n.data?.trip_id ? `/trip/${n.data.trip_id}` : '/my-trips'),
+      });
+    }
+
     list.sort((a, b) => new Date(getItemDate(b)).getTime() - new Date(getItemDate(a)).getTime());
     setItems(list.slice(0, 50));
     setLoading(false);
-  }, [user]);
+  }, [user, dbNotifs]);
 
   useEffect(() => { void load(); }, [load]);
 

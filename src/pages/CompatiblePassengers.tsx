@@ -116,7 +116,7 @@ const CompatiblePassengers = () => {
               {req.message && <p className="text-xs text-muted-foreground italic mb-3">"{req.message}"</p>}
 
               {isDriver && req.passenger_id !== user?.id ? (
-                <Button className="w-full h-11 rounded-xl gap-1.5 text-sm bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30" variant="outline" onClick={() => toast.info('Próximamente podrás invitar pasajeros a tu viaje.')}>
+                <Button className="w-full h-11 rounded-xl gap-1.5 text-sm bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30" variant="outline" onClick={() => { toast.info('Abrí "Mis viajes" para enviarle una oferta desde tu viaje publicado.'); navigate('/my-trips'); }}>
                   <Car className="h-4 w-4" /> Ofrecerme como chofer
                 </Button>
               ) : req.passenger_id === user?.id ? (

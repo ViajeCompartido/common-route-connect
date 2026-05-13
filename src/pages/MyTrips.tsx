@@ -799,7 +799,12 @@ const MyTrips = () => {
                       <>
                         <p className="text-xs text-muted-foreground font-semibold pt-2">Finalizados</p>
                         {pastDriverTrips.map(t => {
-                          const ts = tripStatusConfig[t.status] ?? tripStatusConfig.completed;
+                          const derivedKey = t.status === 'cancelled'
+                            ? 'cancelled'
+                            : t.status === 'completed'
+                              ? 'completed'
+                              : 'expired';
+                          const ts = tripStatusConfig[derivedKey];
                           return (
                             <div key={t.id} className="bg-card rounded-2xl p-4 border border-border opacity-70">
                               <div className="flex items-start justify-between mb-1">

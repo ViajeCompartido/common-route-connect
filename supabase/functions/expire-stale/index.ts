@@ -29,17 +29,17 @@ Deno.serve(async () => {
     .lt("time", cutoffTime)
     .select("id", { count: "exact", head: true });
 
-  // Expire trips (mark as cancelled)
+  // Expire trips without treating them as manually cancelled.
   const { count: tripCount } = await supabase
     .from("trips")
-    .update({ status: "cancelled" })
+    .update({ status: "expired" })
     .eq("status", "active")
     .lt("date", today)
     .select("id", { count: "exact", head: true });
 
   const { count: tripTodayCount } = await supabase
     .from("trips")
-    .update({ status: "cancelled" })
+    .update({ status: "expired" })
     .eq("status", "active")
     .eq("date", today)
     .lt("time", cutoffTime)

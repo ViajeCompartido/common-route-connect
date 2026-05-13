@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 import { getInitial } from '@/lib/avatarUtils';
-import OfferDialog from '@/components/OfferDialog';
+
 
 interface RideRequestRow {
   id: string; passenger_id: string; origin: string; destination: string;

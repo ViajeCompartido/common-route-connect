@@ -389,13 +389,20 @@ const MyTrips = () => {
   const isItemExpired = (date: string, time: string) => isTripExpired(date, time);
 
   const activeBookings = bookings.filter(b =>
-    ['pending', 'accepted', 'coordinating', 'paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && !isItemExpired(b.date, b.time)
+    ['accepted', 'coordinating', 'paid', 'driver_on_way', 'driver_arrived', 'in_transit'].includes(b.status) && !isItemExpired(b.date, b.time)
+  );
+  const pendingBookings = bookings.filter(b =>
+    b.status === 'pending' && !isItemExpired(b.date, b.time)
   );
   const pastBookings = bookings.filter(b =>
     ['completed', 'cancelled_passenger', 'cancelled_driver', 'rejected'].includes(b.status) || isItemExpired(b.date, b.time)
   );
-  const activeDriverTrips = driverTrips.filter(t =>
-    ['active', 'paused', 'full', 'in_progress'].includes(t.status) && !isItemExpired(t.date, t.time)
+  const tripHasReservations = (t: TripRow) => (t.total_seats - t.available_seats) > 0;
+  const publishedDriverTrips = driverTrips.filter(t =>
+    ['active', 'paused', 'full'].includes(t.status) && !tripHasReservations(t) && !isItemExpired(t.date, t.time)
+  );
+  const confirmedDriverTrips = driverTrips.filter(t =>
+    ((['active', 'paused', 'full'].includes(t.status) && tripHasReservations(t)) || t.status === 'in_progress') && !isItemExpired(t.date, t.time)
   );
   const pastDriverTrips = driverTrips.filter(t =>
     ['completed', 'cancelled'].includes(t.status) || isItemExpired(t.date, t.time)
@@ -403,7 +410,7 @@ const MyTrips = () => {
   const activeRequests = rideRequests.filter(r => r.status === 'active' && !isItemExpired(r.date, r.time));
   const pastRequests = rideRequests.filter(r => r.status !== 'active' || isItemExpired(r.date, r.time));
 
-  const totalActive = activeBookings.length + activeRequests.length;
+  const totalActive = activeBookings.length + confirmedDriverTrips.length;
 
   // Friendly date formatter (Hoy / Mañana / dd MMM)
   const friendlyDate = (dateStr: string) => {

@@ -833,9 +833,10 @@ const MyTrips = () => {
                     <>
                       <p className="text-xs text-muted-foreground font-semibold pt-2">Anteriores</p>
                       {pastDriverTrips.map(t => {
-                        const derivedKey = t.status === 'cancelled'
+                        const realStatus = getRealTripStatus(t, isItemExpired(t.date, t.time));
+                        const derivedKey = realStatus === 'cancelled'
                           ? 'cancelled'
-                          : t.status === 'completed'
+                          : realStatus === 'completed'
                             ? 'completed'
                             : 'expired';
                         const ts = tripStatusConfig[derivedKey];

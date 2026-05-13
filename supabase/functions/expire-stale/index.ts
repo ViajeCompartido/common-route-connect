@@ -49,14 +49,14 @@ Deno.serve(async () => {
   const { count: tripCount } = await supabase
     .from("trips")
     .update({ status: "expired" })
-    .eq("status", "active")
+    .in("status", ["active", "paused", "full"])
     .lt("date", today)
     .select("id", { count: "exact", head: true });
 
   const { count: tripTodayCount } = await supabase
     .from("trips")
     .update({ status: "expired" })
-    .eq("status", "active")
+    .in("status", ["active", "paused", "full"])
     .eq("date", cutoff.date === today ? today : "0001-01-01")
     .lt("time", cutoff.time)
     .select("id", { count: "exact", head: true });

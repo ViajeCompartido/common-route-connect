@@ -303,6 +303,14 @@ const MyTrips = () => {
     setDriverTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: newStatus } : t));
   };
 
+  const startTripAsDriver = async (tripId: string) => {
+    const hasPax = await hasActiveBookings(tripId);
+    if (!hasPax) {
+      const ok = window.confirm('Este viaje todavía no tiene pasajeros reservados. ¿Querés iniciarlo igual?');
+      if (!ok) return;
+    }
+    await handleTripAction(tripId, 'in_progress');
+
   const handleCancelRequest = async (id: string) => {
     setActionLoading(id);
     const { error } = await supabase.from('ride_requests').update({ status: 'cancelled' }).eq('id', id);

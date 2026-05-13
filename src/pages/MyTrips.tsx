@@ -420,13 +420,13 @@ const MyTrips = () => {
   );
   const tripHasReservations = (t: TripRow) => (t.total_seats - t.available_seats) > 0;
   const publishedDriverTrips = driverTrips.filter(t =>
-    ['active', 'paused', 'full'].includes(t.status) && !tripHasReservations(t) && !isItemExpired(t.date, t.time)
+    ['active', 'paused', 'full'].includes(getRealTripStatus(t, isItemExpired(t.date, t.time))) && !tripHasReservations(t) && !isItemExpired(t.date, t.time)
   );
   const confirmedDriverTrips = driverTrips.filter(t =>
-    ((['active', 'paused', 'full'].includes(t.status) && tripHasReservations(t)) || t.status === 'in_progress') && !isItemExpired(t.date, t.time)
+    ((['active', 'paused', 'full'].includes(getRealTripStatus(t, isItemExpired(t.date, t.time))) && tripHasReservations(t)) || getRealTripStatus(t, isItemExpired(t.date, t.time)) === 'in_progress') && !isItemExpired(t.date, t.time)
   );
   const pastDriverTrips = driverTrips.filter(t =>
-    ['completed', 'cancelled'].includes(t.status) || isItemExpired(t.date, t.time)
+    ['completed', 'cancelled', 'expired'].includes(getRealTripStatus(t, isItemExpired(t.date, t.time))) || isItemExpired(t.date, t.time)
   );
   const activeRequests = rideRequests.filter(r => r.status === 'active' && !isItemExpired(r.date, r.time));
   const pastRequests = rideRequests.filter(r => r.status !== 'active' || isItemExpired(r.date, r.time));
@@ -457,7 +457,8 @@ const MyTrips = () => {
   };
 
   const renderDriverTripCard = (t: TripRow, i: number) => {
-    const ts = tripStatusConfig[t.status] ?? tripStatusConfig.active;
+    const realStatus = getRealTripStatus(t, isItemExpired(t.date, t.time));
+    const ts = tripStatusConfig[realStatus] ?? tripStatusConfig.active;
     return (
       <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
         <div className="bg-card rounded-2xl p-4 border border-border">
@@ -467,7 +468,7 @@ const MyTrips = () => {
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {t.date} · {t.time}hs</p>
             </div>
             <div className="flex items-center gap-1.5">
-              {['active', 'paused'].includes(t.status) && (
+              {['active', 'paused'].includes(realStatus) && (
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditTrip(t)}>
                   <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
@@ -482,7 +483,7 @@ const MyTrips = () => {
             <span className="font-heading font-bold text-primary">{formatPrice(Number(t.price_per_seat))}/asiento</span>
           </div>
 
-          {['active', 'full'].includes(t.status) && t.available_seats > 0 && (
+          {['active', 'full'].includes(realStatus) && t.available_seats > 0 && (
             <CompatiblePassengersBlock
               tripId={t.id}
               origin={t.origin}
@@ -540,24 +541,24 @@ const MyTrips = () => {
 
           <div className="flex gap-2 flex-wrap">
             <Button size="sm" variant="outline" className="flex-1 h-9 rounded-xl gap-1 text-xs" onClick={() => navigate('/driver-requests')}>Solicitudes</Button>
-            {t.status === 'active' && (
+            {realStatus === 'active' && (
               <>
                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'paused')}><Pause className="h-3 w-3" /> Pausar</Button>
                 <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'full')}><Ban className="h-3 w-3" /> Marcar como lleno</Button>
               </>
             )}
-            {t.status === 'paused' && (
+            {realStatus === 'paused' && (
               <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'active')}><Play className="h-3 w-3" /> Reactivar</Button>
             )}
-            {t.status === 'full' && (
+            {realStatus === 'full' && (
               <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs" disabled={actionLoading === t.id || t.available_seats === 0} onClick={() => handleTripAction(t.id, 'active')}>
                 <Play className="h-3 w-3" /> Volver a mostrar viaje
               </Button>
             )}
-            {['active', 'paused', 'full'].includes(t.status) && (
+            {['active', 'paused', 'full'].includes(realStatus) && (
               <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-ocean text-primary-foreground" disabled={actionLoading === t.id} onClick={() => startTripAsDriver(t.id)}><Car className="h-3 w-3" /> Iniciar viaje</Button>
             )}
-            {t.status === 'in_progress' && (
+            {realStatus === 'in_progress' && (
               <>
                 <Button size="sm" className="h-9 rounded-xl gap-1 text-xs bg-secondary text-secondary-foreground hover:bg-secondary/80" disabled={actionLoading === t.id} onClick={async () => {
                   setActionLoading(t.id);
@@ -574,7 +575,7 @@ const MyTrips = () => {
                 <Button size="sm" className="h-9 rounded-xl gap-1 text-xs gradient-accent text-primary-foreground" disabled={actionLoading === t.id} onClick={() => handleTripAction(t.id, 'completed')}><Flag className="h-3 w-3" /> Finalizar viaje</Button>
               </>
             )}
-            {['active', 'paused', 'full'].includes(t.status) && (
+            {['active', 'paused', 'full'].includes(realStatus) && (
               <Button size="sm" variant="outline" className="h-9 rounded-xl gap-1 text-xs text-destructive border-destructive/30" disabled={actionLoading === t.id} onClick={() => setCancelTripConfirm(t)}>
                 <XCircle className="h-3 w-3" /> Cancelar viaje
               </Button>

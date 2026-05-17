@@ -409,9 +409,12 @@ const TripDetail = () => {
           <div className="bg-card rounded-2xl p-5 border border-border">
             <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">Sobre el chofer</h3>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-14 h-14 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground font-heading font-bold text-xl shrink-0">
-                {getInitial(driver?.first_name)}
-              </div>
+              <Avatar className="w-14 h-14 shrink-0">
+                {driver?.avatar_url && <AvatarImage src={driver.avatar_url} alt={driverName} />}
+                <AvatarFallback className="gradient-ocean text-primary-foreground font-heading font-bold text-xl">
+                  {getInitial(driver?.first_name)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold font-heading">{driverName}</span>

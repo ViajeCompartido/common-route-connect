@@ -147,7 +147,7 @@ const TripDetail = () => {
     setTrip(tripData as TripData);
 
     const [{ data: profileData }, { data: driverData }] = await Promise.all([
-      supabase.from('profiles').select('first_name, last_name, average_rating, total_trips, verified').eq('id', tripData.driver_id).single(),
+      supabase.from('profiles').select('first_name, last_name, average_rating, total_trips, verified, avatar_url').eq('id', tripData.driver_id).single(),
       supabase.from('driver_profiles').select('vehicle, plate, color, pet_sizes_accepted').eq('user_id', tripData.driver_id).maybeSingle(),
     ]);
     if (profileData) setDriver(profileData);

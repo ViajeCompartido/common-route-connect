@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { getInitial } from '@/lib/avatarUtils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, MapPin, Clock, Users, PawPrint, Luggage, MessageCircle, BadgeCheck, Car, Send, CheckCircle2, CreditCard, XCircle, Info, Handshake, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,7 +67,7 @@ interface TripData {
 
 interface DriverProfile {
   first_name: string; last_name: string; average_rating: number;
-  total_trips: number; verified: boolean;
+  total_trips: number; verified: boolean; avatar_url: string | null;
 }
 
 interface DriverVehicle {
@@ -146,7 +147,7 @@ const TripDetail = () => {
     setTrip(tripData as TripData);
 
     const [{ data: profileData }, { data: driverData }] = await Promise.all([
-      supabase.from('profiles').select('first_name, last_name, average_rating, total_trips, verified').eq('id', tripData.driver_id).single(),
+      supabase.from('profiles').select('first_name, last_name, average_rating, total_trips, verified, avatar_url').eq('id', tripData.driver_id).single(),
       supabase.from('driver_profiles').select('vehicle, plate, color, pet_sizes_accepted').eq('user_id', tripData.driver_id).maybeSingle(),
     ]);
     if (profileData) setDriver(profileData);
@@ -177,7 +178,20 @@ const TripDetail = () => {
   const seatSummary = trip ? getSeatSummary(trip.total_seats, trip.available_seats) : null;
 
   const handleRequestSeat = async () => {
-    if (!user || !trip) return;
+    if (!user) {
+      toast.error('Iniciá sesión para reservar.');
+      navigate('/login');
+      return;
+    }
+    if (!trip) return;
+    if (!trip.driver_id) {
+      toast.error('Este viaje no tiene chofer asignado.');
+      return;
+    }
+    if (user.id === trip.driver_id) {
+      toast.error('No podés reservar tu propio viaje.');
+      return;
+    }
 
     if (!isProfileComplete) {
       toast.error('Completá tu perfil para continuar.');
@@ -203,7 +217,21 @@ const TripDetail = () => {
     }
 
     setSubmitting(true);
-    const { data, error } = await supabase.from('bookings').insert({
+
+    // Duplicate check
+    const { data: dup } = await supabase.from('bookings')
+      .select('id')
+      .eq('trip_id', trip.id)
+      .eq('passenger_id', user.id)
+      .not('status', 'in', '("cancelled_passenger","cancelled_driver","rejected")')
+      .maybeSingle();
+    if (dup) {
+      setSubmitting(false);
+      toast.error('Ya enviaste una solicitud para este viaje.');
+      return;
+    }
+
+    const payload = {
       trip_id: trip.id,
       passenger_id: user.id,
       driver_id: trip.driver_id,
@@ -213,13 +241,26 @@ const TripDetail = () => {
       pet_size: reqHasPet ? reqPetSize : null,
       pet_surcharge: petSurcharge,
       has_luggage: reqHasLuggage,
-      status: 'pending',
-    }).select('id').single();
+      status: 'pending' as const,
+    };
+
+    const { data, error } = await supabase.from('bookings').insert(payload).select('id').single();
 
     setSubmitting(false);
     if (error) {
-      toast.error('No pudimos enviar la solicitud. Intentá de nuevo.');
-      console.error(error);
+      console.error('[bookings.insert] error', { error, payload });
+      const msg = error.message || '';
+      if (/row-level security|permission/i.test(msg)) {
+        toast.error('No tenés permisos para reservar este viaje (RLS).');
+      } else if (/asientos|seats/i.test(msg)) {
+        toast.error(msg);
+      } else if (/duplicate|unique/i.test(msg)) {
+        toast.error('Ya enviaste una solicitud para este viaje.');
+      } else if (/column|does not exist/i.test(msg)) {
+        toast.error('Error de base de datos: columna inexistente. ' + msg);
+      } else {
+        toast.error('No pudimos enviar la solicitud: ' + (msg || 'error desconocido'));
+      }
       return;
     }
     setBookingId(data.id);
@@ -231,7 +272,7 @@ const TripDetail = () => {
       pet_surcharge: petSurcharge,
     });
     setBookingStatus('pending');
-    toast.success('¡Solicitud enviada!');
+    toast.success('Solicitud enviada. Esperá la confirmación del chofer.');
   };
 
   const handleCancel = async () => {
@@ -408,9 +449,12 @@ const TripDetail = () => {
           <div className="bg-card rounded-2xl p-5 border border-border">
             <h3 className="text-xs font-heading font-bold text-muted-foreground uppercase tracking-wider mb-3">Sobre el chofer</h3>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-14 h-14 rounded-full gradient-ocean flex items-center justify-center text-primary-foreground font-heading font-bold text-xl shrink-0">
-                {getInitial(driver?.first_name)}
-              </div>
+              <Avatar className="w-14 h-14 shrink-0">
+                {driver?.avatar_url && <AvatarImage src={driver.avatar_url} alt={driverName} />}
+                <AvatarFallback className="gradient-ocean text-primary-foreground font-heading font-bold text-xl">
+                  {getInitial(driver?.first_name)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold font-heading">{driverName}</span>

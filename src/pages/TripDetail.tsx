@@ -67,7 +67,7 @@ interface TripData {
 
 interface DriverProfile {
   first_name: string; last_name: string; average_rating: number;
-  total_trips: number; verified: boolean;
+  total_trips: number; verified: boolean; avatar_url: string | null;
 }
 
 interface DriverVehicle {
